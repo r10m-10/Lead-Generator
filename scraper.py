@@ -52,13 +52,7 @@ HOW MANY LEADS WOULD YOU LIKE TO GENERATE?""")
             d['name'] = card.get_attribute("aria-label")
 
             print(f"{i+1}. {d['name']}")
-
-            rating_loc = card.locator('span[role="img"][aria-label*="stars"]')
-            if rating_loc.count() == 0:
-                d['rating'] = ""
-            else:
-                d['rating'] = rating_loc.get_attribute("aria-label")
-
+            
             card.click()
             page.wait_for_function(
             """
@@ -88,6 +82,12 @@ HOW MANY LEADS WOULD YOU LIKE TO GENERATE?""")
                 d['website'] = ""
             else:
                 d['website'] = website_loc.get_attribute("href")
+
+            rating_loc = card.locator('span[role="img"][aria-label*="stars"]')
+            if rating_loc.count() == 0:
+                d['rating'] = ""
+            else:
+                d['rating'] = rating_loc.get_attribute("aria-label")            
             
             print("GENERATED \n")
             
