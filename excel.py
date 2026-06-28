@@ -1,6 +1,7 @@
 from openpyxl import Workbook
 
 def convert_to_excel(leads):
+    print("----------GENERATING EXCEL FILE----------")
     wb = Workbook()
     ws = wb.active
 
@@ -12,3 +13,4 @@ def convert_to_excel(leads):
         ws.append(row)
     
     wb.save("leads.xlsx")
+    print('\n----------EXCEL FILE SAVED SUCESSFULLY AS "leads.xlsx"----------')

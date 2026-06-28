@@ -2,7 +2,7 @@ from playwright.sync_api import sync_playwright
 
 def scraper(query):
     with sync_playwright() as p:
-        browser = p.firefox.launch(headless=False)
+        browser = p.firefox.launch()
         page = browser.new_page()
 
         page.goto("https://www.google.com/maps", timeout=60000)
@@ -32,7 +32,7 @@ def scraper(query):
             new = businesses_loc.count()
             print(f"Previous Count: {prev} | Current Count: {new}")
 
-            if new == 16:
+            if new == prev:
                 break
 
             prev = new
@@ -52,7 +52,7 @@ HOW MANY LEADS WOULD YOU LIKE TO GENERATE?""")
             d['name'] = card.get_attribute("aria-label")
 
             print(f"{i+1}. {d['name']}")
-            
+
             card.click()
             page.wait_for_function(
             """
