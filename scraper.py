@@ -21,26 +21,29 @@ def scraper(query):
         scroller.wait_for()
 
         prev = businesses_loc.count()
+        unsucessful = 0
         
-        print("----------SCRAPING----------")
+        print("\n----------SCRAPING----------")
         while True:
             last_business = businesses_loc.nth(prev-1)
             last_business.scroll_into_view_if_needed()
             scroller.evaluate("(el) => el.scrollBy(0, 100)")
-            page.wait_for_function("""(prev) => document.querySelectorAll('div[role="article"]').length > prev""", arg=prev)
+            page.wait_for_timeout(2000)
+            #page.wait_for_function("""(prev) => document.querySelectorAll('div[role="article"]').length > prev""", arg=prev)
             
             new = businesses_loc.count()
             print(f"Previous Count: {prev} | Current Count: {new}")
 
             if new == prev:
+                unsucessful += 1
+            if unsucessful == 3:
                 break
 
-            prev = new
-
+            prev = new            
         print(f"""
 FOUND {prev} BUSINESSES
 HOW MANY LEADS WOULD YOU LIKE TO GENERATE?""")
-        n_leads = int(input(f"(number between 0 & {prev}):  "))
+        n_leads = int(input(f">  (number between 0 & {prev}):  "))
 
         print(f"\n----------GENERATING {n_leads} LEADS----------")
 
@@ -49,7 +52,8 @@ HOW MANY LEADS WOULD YOU LIKE TO GENERATE?""")
         for i in range(n_leads):
             card = businesses_loc.nth(i)
             d = {}
-            d['name'] = card.get_attribute("aria-label")
+            name_loc = card.locator("a.hfpxzc")
+            d['name'] = name_loc.get_attribute("aria-label")
 
             print(f"{i+1}. {d['name']}")
 
@@ -70,6 +74,7 @@ HOW MANY LEADS WOULD YOU LIKE TO GENERATE?""")
             """,
             arg=d["name"]
             )
+            page.wait_for_timeout(1500)
             
             phno_loc = page.locator('button[data-item-id^="phone"]')
             if phno_loc.count() == 0:
