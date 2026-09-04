@@ -1,8 +1,8 @@
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 
 def scraper(query):
     with sync_playwright() as p:
-        browser = p.firefox.launch()
+        browser = p.firefox.launch(headless=False)
         page = browser.new_page()
 
         page.goto("https://www.google.com/maps", timeout=60000)
@@ -12,11 +12,14 @@ def scraper(query):
         search_box.fill(query)
 
         page.keyboard.press("Enter")
-        page.wait_for_timeout(3000)
+        page.wait_for_load_state(timeout=3000)
 
-        businesses_loc = page.locator('div[role="article"]')
-        businesses_loc.first.wait_for()
-
+        try:
+            businesses_loc = page.locator('div[role="article"]')
+            businesses_loc.first.wait_for()
+        except PlaywrightTimeoutError:
+            return "No search results for this query"
+        
         scroller = page.locator('div[role="feed"]')
         scroller.wait_for()
 
@@ -28,7 +31,7 @@ def scraper(query):
             last_business = businesses_loc.nth(prev-1)
             last_business.scroll_into_view_if_needed()
             scroller.evaluate("(el) => el.scrollBy(0, 100)")
-            page.wait_for_timeout(2000)
+            page.wait_for_timeout(1500)
             #page.wait_for_function("""(prev) => document.querySelectorAll('div[role="article"]').length > prev""", arg=prev)
             
             new = businesses_loc.count()
@@ -36,6 +39,8 @@ def scraper(query):
 
             if new == prev:
                 unsucessful += 1
+            else:
+                unsucessful = 0
             if unsucessful == 3:
                 break
 
@@ -100,3 +105,5 @@ HOW MANY LEADS WOULD YOU LIKE TO GENERATE?""")
 
         browser.close()
     return leads
+
+print(scraper('dentists near me'))
