@@ -14,16 +14,24 @@ def scraper(query):
         page.keyboard.press("Enter")
         page.wait_for_load_state(timeout=3000)
 
+        main = page.locator('div[role="main"]')
+        businesses_loc = page.locator('div[role="article"]')
+
+        combined = businesses_loc.first.or_(main.get_by_text("can't find", exact=False))
+
         try:
-            businesses_loc = page.locator('div[role="article"]')
-            businesses_loc.first.wait_for()
+            combined.wait_for()
         except PlaywrightTimeoutError:
-            return "No search results for this query"
+            return "Network Error"
+
+        if businesses_loc.first.count() > 0:
+            prev = businesses_loc.count()
+        elif main.get_by_text("can't find", exact=False).count() > 0:
+            return "Invalid Input"
         
         scroller = page.locator('div[role="feed"]')
         scroller.wait_for()
 
-        prev = businesses_loc.count()
         unsucessful = 0
         
         print("\n----------SCRAPING----------")
@@ -106,4 +114,4 @@ HOW MANY LEADS WOULD YOU LIKE TO GENERATE?""")
         browser.close()
     return leads
 
-print(scraper('dentists near me'))
+print(scraper('Dentist in delhi'))
