@@ -19,6 +19,9 @@ else:
     query = str(input("""\nEnter custom query (ex: Denstist in Delhi)
 >  """))
 
-leads = scraper(query)
+scraped = scraper(query)
 
-convert_to_excel(leads)
+if len(scraped["leads"]) > 0:
+    convert_to_excel(scraped["leads"])
+else:
+    print(scraped["error"])

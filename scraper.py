@@ -1,6 +1,7 @@
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 
 def scraper(query):
+    result = {"leads": [], "error": False}
     with sync_playwright() as p:
         browser = p.firefox.launch(headless=False)
         page = browser.new_page()
@@ -8,11 +9,19 @@ def scraper(query):
         page.goto("https://www.google.com/maps", timeout=60000)
 
         search_box = page.locator('input[role="combobox"]')
-        search_box.wait_for()
+        try:
+            search_box.wait_for()
+        except PlaywrightTimeoutError:
+            result["error"] = "Network Error"
+            return result
         search_box.fill(query)
 
         page.keyboard.press("Enter")
-        page.wait_for_load_state(timeout=3000)
+        try:
+            page.wait_for_load_state(timeout=3000)
+        except PlaywrightTimeoutError:
+            result["error"] = "Network Error"
+            return result
 
         main = page.locator('div[role="main"]')
         businesses_loc = page.locator('div[role="article"]')
@@ -22,15 +31,21 @@ def scraper(query):
         try:
             combined.wait_for()
         except PlaywrightTimeoutError:
-            return "Network Error"
+            result["error"] = "Network Error"
+            return result
 
         if businesses_loc.first.count() > 0:
             prev = businesses_loc.count()
         elif main.get_by_text("can't find", exact=False).count() > 0:
-            return "Invalid Input"
+            result["error"] = "Invalid Input"
+            return result
         
         scroller = page.locator('div[role="feed"]')
-        scroller.wait_for()
+        try:
+            scroller.wait_for()
+        except PlaywrightTimeoutError:
+            result["error"] = "Network Error"
+            return result
 
         unsucessful = 0
         
@@ -59,8 +74,6 @@ HOW MANY LEADS WOULD YOU LIKE TO GENERATE?""")
         n_leads = int(input(f">  (number between 0 & {prev}):  "))
 
         print(f"\n----------GENERATING {n_leads} LEADS----------")
-
-        leads = []
 
         for i in range(n_leads):
             card = businesses_loc.nth(i)
@@ -109,9 +122,9 @@ HOW MANY LEADS WOULD YOU LIKE TO GENERATE?""")
             
             print("GENERATED \n")
             
-            leads.append(d)
+            result["leads"].append(d)
 
         browser.close()
-    return leads
+    return result
 
 print(scraper('Dentist in delhi'))
