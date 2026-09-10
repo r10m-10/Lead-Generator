@@ -1,5 +1,5 @@
-from scraper import scraper
-from excel import convert_to_excel
+from scraper.scraper import scraper
+from scraper.excel import convert_to_excel
 
 print("""
 1. Guided Search
