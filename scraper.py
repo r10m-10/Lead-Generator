@@ -6,7 +6,7 @@ def scraper(query):
 
     with sync_playwright() as p:
         try:
-            browser = p.firefox.launch(headless=False)
+            browser = p.firefox.launch(headless=True)
             page = browser.new_page()
 
             page.goto("https://www.google.com/maps", timeout=60000)
@@ -59,21 +59,16 @@ def scraper(query):
                 scroller.evaluate("(el) => el.scrollBy(0, 100)")
                 page.wait_for_timeout(2000)
                 try:
-                    page.wait_for_function("""(prev) => document.querySelectorAll('div[role="article"]').length > prev""", arg=prev, timeout=5000)
+                    page.wait_for_function("""(prev) => document.querySelectorAll('div[role="article"]').length > prev""", arg=prev, timeout=1000)
                 except PlaywrightTimeoutError:
-                    result["error"] = "Network Error"
-                    return result
-                
-                new = businesses_loc.count()
-                print(f"Previous Count: {prev} | Current Count: {new}")
-
-                if new == prev:
                     unsucessful += 1
-                else:
-                    unsucessful = 0
-                if unsucessful == 3:
-                    break
-
+                    if unsucessful == 3:
+                        break
+                finally:
+                    new = businesses_loc.count()
+                    print(f"Previous Count: {prev} | Current Count: {new}")
+                    if new != prev:
+                        unsucessful = 0
                 prev = new            
             print(f"""
     FOUND {prev} BUSINESSES
@@ -85,7 +80,8 @@ def scraper(query):
             for i in range(n_leads):
                 card = businesses_loc.nth(i)
                 d = {}
-                name_loc = card.locator("a.hfpxzc")
+                name_loc = card.locator("> a")
+                print(name_loc.count())
                 d['name'] = name_loc.get_attribute("aria-label")
 
                 print(f"{i+1}. {d['name']}")
@@ -134,7 +130,10 @@ def scraper(query):
                 
                 result["leads"].append(d)
         except Exception as e:
-            result["error"] = str(e)
+            if len(result["leads"]) > 0:
+                result["error"] = "Error occured during runtime"
+            else:
+                result["error"] = str(e)
         finally:
             if browser is not None:
                 browser.close()

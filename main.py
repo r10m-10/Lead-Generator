@@ -21,7 +21,9 @@ else:
 
 scraped = scraper(query)
 
-if len(scraped["leads"]) > 0:
+if scraped["error"] == False:
     convert_to_excel(scraped["leads"])
 else:
+    if len(scraped["leads"]) > 0:
+        convert_to_excel(scraped["leads"])
     print(scraped["error"])
