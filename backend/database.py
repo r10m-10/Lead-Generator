@@ -2,7 +2,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from .models.base import Base
 
-db_url = "sqlite:///../data/platform.db"
+db_url = "sqlite:///data/platform.db"
 
 engine = create_engine(db_url)
 
