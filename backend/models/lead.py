@@ -16,5 +16,5 @@ class Lead(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     __table_args__ = (
-        UniqueConstraint(team_id, phone_number, name="uq_team_phone")
+        UniqueConstraint("team_id", "phone_number", name="uq_team_phone"),
     )
