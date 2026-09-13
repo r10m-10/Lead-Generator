@@ -1,7 +1,14 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
+from .database  import init_db
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    init_db()
+    yield
 
-@app.get('/')
-def home():
+app = FastAPI(lifespan=lifespan)
+
+@app.get('/health')
+def health():
     return {"status": "ok"}
