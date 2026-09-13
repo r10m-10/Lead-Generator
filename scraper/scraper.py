@@ -70,9 +70,9 @@ def scraper(query):
                     if new != prev:
                         unsucessful = 0
                 prev = new            
-            print(f"""
-    FOUND {prev} BUSINESSES
-    HOW MANY LEADS WOULD YOU LIKE TO GENERATE?""")
+            print(f'''
+FOUND {prev} BUSINESSES
+HOW MANY LEADS WOULD YOU LIKE TO GENERATE''')
             n_leads = int(input(f">  (number between 0 & {prev}):  "))
 
             print(f"\n----------GENERATING {n_leads} LEADS----------")
@@ -81,7 +81,6 @@ def scraper(query):
                 card = businesses_loc.nth(i)
                 d = {}
                 name_loc = card.locator("> a")
-                print(name_loc.count())
                 d['name'] = name_loc.get_attribute("aria-label")
 
                 print(f"{i+1}. {d['name']}")
@@ -110,19 +109,22 @@ def scraper(query):
                 
                 phno_loc = page.locator('button[data-item-id^="phone"]')
                 if phno_loc.count() == 0:
-                    d['phno'] = ""
+                    d['phno'] = None
                 else:
                     d['phno'] = phno_loc.get_attribute("aria-label")
                 
                 website_loc = page.locator('[data-item-id="authority"]')
                 if website_loc.count() == 0:
-                    d['website'] = ""
+                    if d["phno"] == None:
+                        continue
+                    else:
+                        d["website"] = None
                 else:
                     d['website'] = website_loc.get_attribute("href")
 
                 rating_loc = card.locator('span[role="img"][aria-label*="stars"]')
                 if rating_loc.count() == 0:
-                    d['rating'] = ""
+                    d['rating'] = None
                 else:
                     d['rating'] = rating_loc.get_attribute("aria-label")            
                 
@@ -138,6 +140,3 @@ def scraper(query):
             if browser is not None:
                 browser.close()
     return result
-
-
-print(scraper('Dentist in delhi'))
