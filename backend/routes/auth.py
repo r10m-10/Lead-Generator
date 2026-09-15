@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select, or_
 from sqlalchemy.orm import Session
 from ..database import get_db
-from ..schemas.user import UserCreate
+from ..schemas.user import UserCreate, UserLogin
 from ..models.team import Team
 from ..models.user import User
 from ..security import hash_password
@@ -11,6 +11,12 @@ auth_router = APIRouter()
 
 @auth_router.post("/users")
 def create_user(payload: UserCreate, db: Session = Depends(get_db)):
+
+    query = select(User).where(or_(User.email == payload.email, User.username == payload.username))
+    existing_user = db.execute(query).scalar_one_or_none()
+
+    if existing_user is not None:
+        raise HTTPException(status_code=400, detail="Username or email already registered")
 
     if payload.team_name is not None:
         new_team = Team(team_name= payload.team_name)
@@ -28,8 +34,37 @@ def create_user(payload: UserCreate, db: Session = Depends(get_db)):
                     role= "boss",
                     team_id= new_team.id,
                     solo_team_id= new_team.id)
-    
     db.add(new_user)
     db.commit()
-    db.refresh(new_team)
-    db.refresh(new_user)
+
+    return {"success": True, "team_name": new_team.team_name, "username": new_user.username}
+
+@auth_router.get("/users/check-username")
+def check_username(username: str, db: Session = Depends(get_db)):
+    query = select(User).where(User.username == username)
+    username_taken = db.execute(query).scalar_one_or_none()
+
+    if username_taken is not None:
+        raise HTTPException(status_code=400, detail="username taken")
+
+    return {"available": True}
+
+@auth_router.get("/users/check-email")
+def check_email(email: str, db: Session = Depends(get_db)):
+    query = select(User).where(User.email == email)
+    email_taken = db.execute(query).scalar_one_or_none()
+
+    if email_taken is not None:
+        raise HTTPException(status_code=400, detail="email taken")
+
+    return {"available": True}
+
+@auth_router.post("/login")
+def login(payload: UserLogin, db: Session = Depends(get_db)):
+    query = select(User).where(User.email == payload.email)
+    found_user = db.execute(query).scalar_one_or_none()
+
+    if found_user is None:
+        raise HTTPException(status_code=400, detail="Incorrect email or password")
+
+    found_user.hashed_password

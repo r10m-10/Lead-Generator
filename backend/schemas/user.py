@@ -8,3 +8,7 @@ class UserCreate(BaseModel):
     password: str
     signup_type: str
     team_name: Optional[str] = None
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
