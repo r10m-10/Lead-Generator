@@ -5,7 +5,7 @@ from ..database import get_db
 from ..schemas.user import UserCreate, UserLogin
 from ..models.team import Team
 from ..models.user import User
-from ..security import hash_password
+from ..security import hash_password, verify_password
 
 auth_router = APIRouter()
 
@@ -67,4 +67,10 @@ def login(payload: UserLogin, db: Session = Depends(get_db)):
     if found_user is None:
         raise HTTPException(status_code=400, detail="Incorrect email or password")
 
-    found_user.hashed_password
+    if verify_password(payload.password, found_user.hashed_password) == False:
+        raise HTTPException(status_code=400, detail="Incorrect email or password")
+
+    query = select(Team).where(Team.id == found_user.team_id)
+    team = db.execute(query).scalar_one_or_none()
+
+    return {"success": True, "team_name": team.team_name, "username": found_user.username}
