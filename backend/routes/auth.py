@@ -6,7 +6,7 @@ from ..schemas.user import UserCreate, UserLogin
 from ..models.team import Team
 from ..models.user import User
 from ..security import hash_password, verify_password
-from ..auth_utils import create_access_token
+from ..auth_utils import create_access_token, get_current_user
 
 auth_router = APIRouter()
 
@@ -87,3 +87,7 @@ def login(payload: UserLogin, db: Session = Depends(get_db)):
             "username": found_user.username,
             "access_token": token, 
             "token_type": "bearer"}
+
+@auth_router.get("/me")
+def get_me(current_user = Depends(get_current_user)):
+    return {"username": current_user.username}
