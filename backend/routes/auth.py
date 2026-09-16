@@ -6,7 +6,7 @@ from ..schemas.user import UserCreate, UserLogin
 from ..models.team import Team
 from ..models.user import User
 from ..security import hash_password, verify_password
-from ..token import create_access_token
+from ..auth_utils import create_access_token
 
 auth_router = APIRouter()
 
