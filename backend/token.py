@@ -13,3 +13,9 @@ def create_access_token(user_id):
     token = jwt.encode(payload, secret_key, algorithm="HS256")
 
     return token
+
+def decode_token(access_token):
+    secret_key = os.getenv("SECRET_KEY")
+
+    payload = jwt.decode(access_token, secret_key, algorithms=["HS256"])
+    return payload["user_id"]

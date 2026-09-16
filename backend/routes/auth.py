@@ -6,6 +6,7 @@ from ..schemas.user import UserCreate, UserLogin
 from ..models.team import Team
 from ..models.user import User
 from ..security import hash_password, verify_password
+from ..token import create_access_token
 
 auth_router = APIRouter()
 
@@ -37,7 +38,13 @@ def create_user(payload: UserCreate, db: Session = Depends(get_db)):
     db.add(new_user)
     db.commit()
 
-    return {"success": True, "team_name": new_team.team_name, "username": new_user.username}
+    token = create_access_token(new_user.id)
+
+    return {"success": True, 
+            "team_name": new_team.team_name, 
+            "username": new_user.username, 
+            "access_token": token, 
+            "token_type": "bearer"}
 
 @auth_router.get("/users/check-username")
 def check_username(username: str, db: Session = Depends(get_db)):
@@ -73,4 +80,10 @@ def login(payload: UserLogin, db: Session = Depends(get_db)):
     query = select(Team).where(Team.id == found_user.team_id)
     team = db.execute(query).scalar_one_or_none()
 
-    return {"success": True, "team_name": team.team_name, "username": found_user.username}
+    token = create_access_token(found_user.id)
+
+    return {"success": True, 
+            "team_name": team.team_name, 
+            "username": found_user.username,
+            "access_token": token, 
+            "token_type": "bearer"}
