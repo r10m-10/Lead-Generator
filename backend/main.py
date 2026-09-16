@@ -2,6 +2,9 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from .database  import init_db
 from .routes.auth import auth_router
+from dotenv import load_dotenv
+
+load_dotenv()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
