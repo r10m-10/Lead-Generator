@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from .database  import init_db
 from .routes.auth import auth_router
+from .routes.lead import lead_router
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -13,6 +14,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 app.include_router(auth_router)
+app.include_router(lead_router)
 
 @app.get('/health')
 def health():

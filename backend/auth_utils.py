@@ -46,4 +46,3 @@ def get_current_user(credentials = Depends(security_scheme), db: Session = Depen
         raise HTTPException (status_code=400, detail="User does not exist")
 
     return user
-
