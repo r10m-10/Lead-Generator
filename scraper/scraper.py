@@ -1,6 +1,6 @@
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 
-def scraper(query):
+def scraper(query, n_leads):
     result = {"leads": [], "error": False}
     browser = None
 
@@ -51,8 +51,7 @@ def scraper(query):
                 return result
 
             unsucessful = 0
-            
-            print("\n----------SCRAPING----------")
+
             while True:
                 last_business = businesses_loc.nth(prev-1)
                 last_business.scroll_into_view_if_needed()
@@ -66,24 +65,15 @@ def scraper(query):
                         break
                 finally:
                     new = businesses_loc.count()
-                    print(f"Previous Count: {prev} | Current Count: {new}")
                     if new != prev:
                         unsucessful = 0
-                prev = new            
-            print(f'''
-FOUND {prev} BUSINESSES
-HOW MANY LEADS WOULD YOU LIKE TO GENERATE''')
-            n_leads = int(input(f">  (number between 0 & {prev}):  "))
-
-            print(f"\n----------GENERATING {n_leads} LEADS----------")
+                prev = new
 
             for i in range(n_leads):
                 card = businesses_loc.nth(i)
                 d = {}
                 name_loc = card.locator("> a")
                 d['name'] = name_loc.get_attribute("aria-label")
-
-                print(f"{i+1}. {d['name']}")
 
                 card.click()
                 try:
@@ -109,16 +99,16 @@ HOW MANY LEADS WOULD YOU LIKE TO GENERATE''')
                 
                 phno_loc = page.locator('button[data-item-id^="phone"]')
                 if phno_loc.count() == 0:
-                    d['phno'] = None
+                    d['phone_number'] = None
                 else:
-                    d['phno'] = phno_loc.get_attribute("aria-label")
+                    d['phone_number'] = phno_loc.get_attribute("aria-label")
                 
                 website_loc = page.locator('[data-item-id="authority"]')
                 if website_loc.count() == 0:
-                    if d["phno"] == None:
+                    if d['phone_number'] == None:
                         continue
                     else:
-                        d["website"] = None
+                        d['website'] = None
                 else:
                     d['website'] = website_loc.get_attribute("href")
 
@@ -128,14 +118,12 @@ HOW MANY LEADS WOULD YOU LIKE TO GENERATE''')
                 else:
                     d['rating'] = rating_loc.get_attribute("aria-label")            
                 
-                print("GENERATED \n")
-                
-                result["leads"].append(d)
+                result['leads'].append(d)
         except Exception as e:
-            if len(result["leads"]) > 0:
-                result["error"] = "Error occured during runtime"
+            if len(result['leads']) > 0:
+                result['error'] = "Error occured during runtime"
             else:
-                result["error"] = str(e)
+                result['error'] = str(e)
         finally:
             if browser is not None:
                 browser.close()
