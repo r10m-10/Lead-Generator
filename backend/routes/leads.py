@@ -17,7 +17,4 @@ def get_leads(current_user = Depends(get_current_user), db: Session = Depends(ge
     query = select(Lead).where(Lead.team_id == team_id)
     leads = db.execute(query).scalars().all()
 
-    if len(leads) == 0:
-        raise HTTPException(status_code=400, detail="No leads available")
-
-    return leads
+    return {"success": True, "leads": leads}
