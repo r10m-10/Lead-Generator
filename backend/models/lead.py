@@ -13,6 +13,8 @@ class Lead(Base):
     phone_number: Mapped[Optional[str]] = mapped_column(String(225), nullable=True)
     website: Mapped[Optional[str]] = mapped_column(String(225), nullable=True)
     rating: Mapped[Optional[str]] = mapped_column(String(225), nullable=True)
+    flag: Mapped[Optional[int]] = mapped_column(nullable=True, default=None)
+    changes: Mapped[Optional[str]] = mapped_column(nullable=True, default=None)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     __table_args__ = (

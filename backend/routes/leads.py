@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select, or_, and_
 from sqlalchemy.orm import Session
+import json
 from ..database import get_db
 from ..models.lead import Lead
-from ..schemas.lead import LeadsRequest, Leads
+from ..schemas.lead import LeadsRequest
 from ..auth_utils import get_current_user
 from ...scraper.scraper import scraper
 
@@ -31,11 +32,26 @@ def generate_leads(payload: LeadsRequest, current_user = Depends(get_current_use
         raise HTTPException(status_code=400, detail=scraped["error"])
 
     for i in scraped["leads"]:
-        query = select(Lead.name, Lead.phone_number, Lead.website, Lead.rating).where(and_(Lead.phone_number == i["phno"], Lead.team_id == team_id))
+        query = select(Lead).where(and_(Lead.phone_number == i["phone_number"], Lead.team_id == team_id))
         lead = db.execute(query).scalar_one_or_none()
 
-        i = Leads.model_validate(i)
-
         if lead is not None:
-            if i == lead:
-                continue
+            if lead.name != i["name"] and lead.website != i["website"]:
+                lead.flag = 0
+                lead.changes = json.dumps({"name": i["name"], "website": i["website"]})
+            elif lead.name != i["name"]:
+                lead.flag = 1
+                lead.changes = json.dumps({"name": i["name"]})
+            elif lead.website != i["website"]:
+                lead.flag = 2
+                lead.changes = json.dumps({"website": i["website"]})
+            else:
+                lead.flag = 3
+        else:
+            new_lead = Lead(team_id= team_id,
+                            name= i["name"],
+                            phone_number= i["phone_number"],
+                            website= i["website"],
+                            rating= i["rating"])
+            db.add(new_lead)
+    db.commit()
