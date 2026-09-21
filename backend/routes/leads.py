@@ -8,6 +8,7 @@ from ..models.lead import Lead
 from ..schemas.lead import LeadsRequest
 from ..auth_utils import get_current_user
 from scraper.scraper import scraper
+from ..dependencies import get_browser
 
 lead_router = APIRouter()
 
@@ -21,13 +22,13 @@ def get_leads(current_user = Depends(get_current_user), db: Session = Depends(ge
     return {"success": True, "leads": leads}
 
 @lead_router.post("/leads/generate-leads")
-async def generate_leads(payload: LeadsRequest, current_user = Depends(get_current_user), db: Session = Depends(get_db)):
+async def generate_leads(payload: LeadsRequest, current_user = Depends(get_current_user), db: Session = Depends(get_db), browser = Depends(get_browser)):
     team_id = current_user.team_id
 
     if current_user.role != "boss":
         raise HTTPException(status_code=401, detail="Need to be the manager to generate leads for this team")
 
-    scraped = await scraper(payload.query, payload.n_leads)
+    scraped = await scraper(browser, payload.query, payload.n_leads)
 
     if scraped["error"]:
         raise HTTPException(status_code=400, detail=scraped["error"])
