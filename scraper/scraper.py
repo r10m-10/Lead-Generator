@@ -1,27 +1,27 @@
-from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
+from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeoutError
 
-def scraper(query, n_leads):
+async def scraper(query, n_leads):
     result = {"leads": [], "error": False}
     browser = None
 
-    with sync_playwright() as p:
+    async with async_playwright() as p:
         try:
-            browser = p.firefox.launch(headless=True)
-            page = browser.new_page()
+            browser = await p.firefox.launch(headless=True)
+            page = await browser.new_page()
 
-            page.goto("https://www.google.com/maps", timeout=60000)
+            await page.goto("https://www.google.com/maps", timeout=60000)
 
             search_box = page.locator('input[role="combobox"]')
             try:
-                search_box.wait_for()
+                await search_box.wait_for()
             except PlaywrightTimeoutError:
                 result["error"] = "Network Error"
                 return result
-            search_box.fill(query)
+            await search_box.fill(query)
 
-            page.keyboard.press("Enter")
+            await page.keyboard.press("Enter")
             try:
-                page.wait_for_load_state(timeout=3000)
+                await page.wait_for_load_state(timeout=3000)
             except PlaywrightTimeoutError:
                 result["error"] = "Network Error"
                 return result
@@ -32,20 +32,20 @@ def scraper(query, n_leads):
             combined = businesses_loc.first.or_(main.get_by_text("can't find", exact=False))
 
             try:
-                combined.wait_for()
+                await combined.wait_for()
             except PlaywrightTimeoutError:
                 result["error"] = "Network Error"
                 return result
 
-            if businesses_loc.first.count() > 0:
-                prev = businesses_loc.count()
-            elif main.get_by_text("can't find", exact=False).count() > 0:
+            if await businesses_loc.first.count() > 0:
+                prev = await businesses_loc.count()
+            elif await main.get_by_text("can't find", exact=False).count() > 0:
                 result["error"] = "Invalid Input"
                 return result
             
             scroller = page.locator('div[role="feed"]')
             try:
-                scroller.wait_for()
+                await scroller.wait_for()
             except PlaywrightTimeoutError:
                 result["error"] = "Network Error"
                 return result
@@ -54,17 +54,17 @@ def scraper(query, n_leads):
 
             while True:
                 last_business = businesses_loc.nth(prev-1)
-                last_business.scroll_into_view_if_needed()
-                scroller.evaluate("(el) => el.scrollBy(0, 100)")
-                page.wait_for_timeout(2000)
+                await last_business.scroll_into_view_if_needed()
+                await scroller.evaluate("(el) => el.scrollBy(0, 100)")
+                await page.wait_for_timeout(2000)
                 try:
-                    page.wait_for_function("""(prev) => document.querySelectorAll('div[role="article"]').length > prev""", arg=prev, timeout=1000)
+                    await page.wait_for_function("""(prev) => document.querySelectorAll('div[role="article"]').length > prev""", arg=prev, timeout=1000)
                 except PlaywrightTimeoutError:
                     unsucessful += 1
                     if unsucessful == 3:
                         break
                 finally:
-                    new = businesses_loc.count()
+                    new = await businesses_loc.count()
                     if new != prev:
                         unsucessful = 0
                 prev = new
@@ -80,11 +80,11 @@ def scraper(query, n_leads):
                 card = businesses_loc.nth(i)
                 d = {}
                 name_loc = card.locator("> a")
-                d['name'] = name_loc.get_attribute("aria-label")
+                d['name'] = await name_loc.get_attribute("aria-label")
 
-                card.click()
+                await card.click()
                 try:
-                    page.wait_for_function(
+                    await page.wait_for_function(
                     """
                     (name) => {
                         const nameLoc = document.querySelector('[role="main"][aria-label]');
@@ -102,28 +102,28 @@ def scraper(query, n_leads):
                     )
                 except PlaywrightTimeoutError:
                     continue
-                page.wait_for_timeout(1500)
+                await page.wait_for_timeout(1500)
                 
                 phno_loc = page.locator('button[data-item-id^="phone"]')
-                if phno_loc.count() == 0:
+                if await phno_loc.count() == 0:
                     d['phone_number'] = None
                 else:
-                    d['phone_number'] = phno_loc.get_attribute("aria-label")
+                    d['phone_number'] = await phno_loc.get_attribute("aria-label")
                 
                 website_loc = page.locator('[data-item-id="authority"]')
-                if website_loc.count() == 0:
+                if await website_loc.count() == 0:
                     if d['phone_number'] == None:
                         continue
                     else:
                         d['website'] = None
                 else:
-                    d['website'] = website_loc.get_attribute("href")
+                    d['website'] = await website_loc.get_attribute("href")
 
                 rating_loc = card.locator('span[role="img"][aria-label*="stars"]')
-                if rating_loc.count() == 0:
+                if await rating_loc.count() == 0:
                     d['rating'] = None
                 else:
-                    d['rating'] = rating_loc.get_attribute("aria-label")            
+                    d['rating'] = await rating_loc.get_attribute("aria-label")            
                 
                 result['leads'].append(d)
         except Exception as e:
@@ -133,5 +133,5 @@ def scraper(query, n_leads):
                 result['error'] = str(e)
         finally:
             if browser is not None:
-                browser.close()
+                await browser.close()
     return result
