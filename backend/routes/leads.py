@@ -6,7 +6,7 @@ from ..database import get_db
 from ..models.lead import Lead
 from ..schemas.lead import LeadsRequest
 from ..auth_utils import get_current_user
-from ...scraper.scraper import scraper
+from scraper.scraper import scraper
 
 lead_router = APIRouter()
 
@@ -55,3 +55,5 @@ def generate_leads(payload: LeadsRequest, current_user = Depends(get_current_use
                             rating= i["rating"])
             db.add(new_lead)
     db.commit()
+    
+    return {"success": True}

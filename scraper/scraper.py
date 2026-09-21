@@ -68,8 +68,15 @@ def scraper(query, n_leads):
                     if new != prev:
                         unsucessful = 0
                 prev = new
+                if prev >= n_leads:
+                    break
 
-            for i in range(n_leads):
+            if prev >= n_leads:
+                n_busi = n_leads
+            else:
+                n_busi = prev
+
+            for i in range(n_busi):
                 card = businesses_loc.nth(i)
                 d = {}
                 name_loc = card.locator("> a")
