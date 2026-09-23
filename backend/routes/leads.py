@@ -5,10 +5,11 @@ import json
 from starlette.concurrency import run_in_threadpool
 from ..database import get_db
 from ..models.lead import Lead
-from ..schemas.lead import LeadsRequest
+from ..schemas.lead import LeadsRequest, LeadReinstate
 from ..auth_utils import get_current_user
 from scraper.scraper import scraper
 from ..dependencies import get_browser
+from ..utils import make_changes
 
 lead_router = APIRouter()
 
@@ -21,7 +22,7 @@ def get_leads(current_user = Depends(get_current_user), db: Session = Depends(ge
 
     return {"success": True, "leads": leads}
 
-@lead_router.post("/leads/generate-leads")
+@lead_router.post("/leads/generate")
 async def generate_leads(payload: LeadsRequest, current_user = Depends(get_current_user), db: Session = Depends(get_db), browser = Depends(get_browser)):
     team_id = current_user.team_id
 
@@ -59,5 +60,36 @@ async def generate_leads(payload: LeadsRequest, current_user = Depends(get_curre
                             rating= i["rating"])
             db.add(new_lead)
     await run_in_threadpool(db.commit)
+
+    return {"success": True}
+
+@lead_router.patch("/leads/reinstate")
+def reinstate(payload: LeadReinstate, current_user = Depends(get_current_user), db: Session = Depends(get_db)):
+    team_id = current_user.team_id
+
+    if payload.flag is not None:
+        query = select(Lead).where(Lead.flag == payload.flag, Lead.team_id == team_id)
+        lead = db.execute(query).scalars().all()
+
+        for i in lead:
+            i.flag = None
+            make_changes(i)
+    elif payload.lead_id is not None:
+        query = select(Lead).where(Lead.id == payload.lead_id, Lead.team_id == team_id)
+        lead = db.execute(query).scalar_one_or_none()
+
+        if lead is None:
+            raise HTTPException(status_code=400, detail="Could not find lead")
+
+        lead.flag = None
+        make_changes(lead)
+    else:
+        query = select(Lead).where(Lead.flag.isnot(None), Lead.team_id == team_id)
+        lead = db.execute(query).scalars().all()
+
+        for i in lead:
+            i.flag = None
+            make_changes(i)
+    db.commit()
 
     return {"success": True}
