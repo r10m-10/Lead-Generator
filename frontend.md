@@ -24,4 +24,8 @@
 
 7. In the onboarding steps (PAGE-2 signup), I am thinking of some cool arrow animation. I am thinking that when the user enters their username and clicks on the button, the arrow grows and then reveals the next page Under it.
 
-8. while generating leads, the user will see 3 options. In the first one, the user will be asked if they want to generate leads from multiple queries. In the second one, the user will be asked to enter their query. And in the third one, the user will be asked if they want to limit their search to `n` number of leads.
+8. while generating leads, the user will see 2 options. In the first one, the user will be asked to enter their query. In the second one, the user will be asked to add an upper limit to their search.
+
+9. There will also be a "+" button at the bottom of each "query box" of "query batch" so that a user can add another query box and mix and match how many leads they want and what queries they want. both questions are required for a query and hence there will be a continue button only when both a re filled. If the user adds a new box then the continue button will again disappear until both of the new questions are filled and so on and so forth.
+
+10. We need a new "Manage Leads" tab where the user can do all sorts of stuff with their leads like view generation history, view all batches, push generated batches to the team, remove batches, break up batches, set deadline on batches, etc.

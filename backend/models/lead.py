@@ -8,10 +8,11 @@ class Lead(Base):
     __tablename__ = "leads"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    batch_id: Mapped[int] = mapped_column(ForeignKey("lead_batches.id"))
     team_id: Mapped[int] = mapped_column(ForeignKey("teams.id"))
-    name: Mapped[str] = mapped_column(String(225))
+    name: Mapped[str] = mapped_column()
     phone_number: Mapped[Optional[str]] = mapped_column(String(225), nullable=True)
-    website: Mapped[Optional[str]] = mapped_column(String(225), nullable=True)
+    website: Mapped[Optional[str]] = mapped_column(nullable=True)
     rating: Mapped[Optional[str]] = mapped_column(String(225), nullable=True)
     flag: Mapped[Optional[int]] = mapped_column(nullable=True, default=None)
     changes: Mapped[Optional[str]] = mapped_column(nullable=True, default=None)
