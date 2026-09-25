@@ -1,9 +1,13 @@
 from pydantic import BaseModel, model_validator
-from typing import Optional
+from datetime import datetime
+from typing import Optional, List
 
-class LeadsRequest(BaseModel):
+class QueryBatch(BaseModel):
     query: str
     n_leads: int
+
+class LeadsRequest(BaseModel):
+    batches: List[QueryBatch]
 
 class LeadReinstate(BaseModel):
     lead_id: Optional[int] = None

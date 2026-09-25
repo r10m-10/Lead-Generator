@@ -24,3 +24,4 @@
 
 7. In the onboarding steps (PAGE-2 signup), I am thinking of some cool arrow animation. I am thinking that when the user enters their username and clicks on the button, the arrow grows and then reveals the next page Under it.
 
+8. while generating leads, the user will see 3 options. In the first one, the user will be asked if they want to generate leads from multiple queries. In the second one, the user will be asked to enter their query. And in the third one, the user will be asked if they want to limit their search to `n` number of leads.
