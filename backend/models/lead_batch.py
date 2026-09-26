@@ -11,4 +11,5 @@ class LeadBatch(Base):
     team_id: Mapped[int] = mapped_column(ForeignKey("teams.id"))
     query: Mapped[str] = mapped_column()
     deadline: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    published: Mapped[bool] = mapped_column(default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))

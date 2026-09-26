@@ -9,3 +9,5 @@
 4. Potential gamifying opportunities. I have already decided on the Daily quota for the employees but this daily quota can also be gamified with an employee leaderboard per team. Or have some kind of streaks or something.
 
 5. already decided on a chatting feature like slack and stuff to better increase coordination between boss and employees.
+
+6. we could also have a calender feature showing a daily target or montly target set by the boss for the employee or set by the employee himself.

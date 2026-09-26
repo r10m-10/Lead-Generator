@@ -18,3 +18,6 @@ class LeadReinstate(BaseModel):
         if self.lead_id is not None and self.flag is not None:
             raise ValueError("Provide either lead_id or flag, not both")
         return self
+
+class PublishBatch(BaseModel):
+    batch_id: int

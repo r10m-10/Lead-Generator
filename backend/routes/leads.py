@@ -6,7 +6,7 @@ from starlette.concurrency import run_in_threadpool
 from ..database import get_db
 from ..models.lead import Lead
 from ..models.lead_batch import LeadBatch
-from ..schemas.lead import LeadsRequest, LeadReinstate
+from ..schemas.lead import LeadsRequest, LeadReinstate, PublishBatch
 from ..auth_utils import get_current_user
 from scraper.scraper import scraper
 from ..dependencies import get_browser
@@ -18,8 +18,13 @@ lead_router = APIRouter()
 def get_leads(current_user = Depends(get_current_user), db: Session = Depends(get_db)):
     team_id = current_user.team_id
 
-    query = select(Lead).where(Lead.team_id == team_id)
-    leads = db.execute(query).scalars().all()
+    if current_user.role == "boss":
+        query = select(Lead).where(Lead.team_id == team_id)
+        leads = db.execute(query).scalars().all()
+    else:
+        batches = select(LeadBatch.id).where(LeadBatch.published == True, LeadBatch.team_id == team_id)
+        query = select(Lead).where(Lead.batch_id.in_(batches), Lead.flag.is_(None), Lead.team_id == team_id)
+        leads = db.execute(query).scalars().all()
 
     return {"success": True, "leads": leads}
 
@@ -75,6 +80,9 @@ async def generate_leads(payload: LeadsRequest, current_user = Depends(get_curre
 def reinstate(payload: LeadReinstate, current_user = Depends(get_current_user), db: Session = Depends(get_db)):
     team_id = current_user.team_id
 
+    if current_user.role != "boss":
+        raise HTTPException(status_code=401, detail="Need to be the manager to reinstate leads for this team")
+
     if payload.flag is not None:
         query = select(Lead).where(Lead.flag == payload.flag, Lead.team_id == team_id)
         lead = db.execute(query).scalars().all()
@@ -98,6 +106,25 @@ def reinstate(payload: LeadReinstate, current_user = Depends(get_current_user), 
         for i in lead:
             i.flag = None
             make_changes(i)
+    db.commit()
+
+    return {"success": True}
+
+@lead_router.patch("/leads/publish")
+def publish_batch(payload: PublishBatch, current_user = Depends(get_current_user), db: Session = Depends(get_db)):
+    team_id = current_user.team_id
+
+    if current_user.role != "boss":
+        raise HTTPException(status_code=401, detail="Need to be the manager to publish leads for this team")
+
+    query = select(LeadBatch).where(LeadBatch.id == payload.batch_id, LeadBatch.team_id == team_id)
+    batch = db.execute(query).scalar_one_or_none()
+
+    if batch is None:
+        raise HTTPException(status_code=400, detail="Batch not found")
+
+    batch.published = True
+
     db.commit()
 
     return {"success": True}
