@@ -32,7 +32,7 @@ def get_leads(current_user = Depends(get_current_user), db: Session = Depends(ge
 async def generate_leads(payload: LeadsRequest, current_user = Depends(get_current_user), db: Session = Depends(get_db), browser = Depends(get_browser)):
 
     if current_user.role != "boss":
-        raise HTTPException(status_code=401, detail="Need to be the manager to generate leads for this team")
+        raise HTTPException(status_code=403, detail="Need to be the manager to generate leads for this team")
 
     for batch in payload.batches:
         scraped = await scraper(browser, batch.query, batch.n_leads)
@@ -79,7 +79,7 @@ async def generate_leads(payload: LeadsRequest, current_user = Depends(get_curre
 def reinstate(payload: LeadReinstate, current_user = Depends(get_current_user), db: Session = Depends(get_db)):
 
     if current_user.role != "boss":
-        raise HTTPException(status_code=401, detail="Need to be the manager to reinstate leads for this team")
+        raise HTTPException(status_code=403, detail="Need to be the manager to reinstate leads for this team")
 
     if payload.flag is not None:
         query = select(Lead).where(Lead.flag == payload.flag, Lead.team_id == current_user.team_id)
@@ -93,7 +93,7 @@ def reinstate(payload: LeadReinstate, current_user = Depends(get_current_user), 
         lead = db.execute(query).scalar_one_or_none()
 
         if lead is None:
-            raise HTTPException(status_code=400, detail="Could not find lead")
+            raise HTTPException(status_code=404, detail="Lead not found")
 
         lead.flag = None
         make_changes(lead)
@@ -108,17 +108,17 @@ def reinstate(payload: LeadReinstate, current_user = Depends(get_current_user), 
 
     return {"success": True}
 
-@lead_router.patch("/leads/publish")
+@lead_router.patch("/leads/{batch_id}/publish")
 def publish_batch(batch_id: int, current_user = Depends(get_current_user), db: Session = Depends(get_db)):
 
     if current_user.role != "boss":
-        raise HTTPException(status_code=401, detail="Need to be the manager to publish leads for this team")
+        raise HTTPException(status_code=403, detail="Need to be the manager to publish leads for this team")
 
     query = select(LeadBatch).where(LeadBatch.id == batch_id, LeadBatch.team_id == current_user.team_id)
     batch = db.execute(query).scalar_one_or_none()
 
     if batch is None:
-        raise HTTPException(status_code=400, detail="Batch not found")
+        raise HTTPException(status_code=404, detail="Batch not found")
 
     batch.published = True
 
@@ -126,17 +126,34 @@ def publish_batch(batch_id: int, current_user = Depends(get_current_user), db: S
 
     return {"success": True}
 
-@lead_router.patch("/leads/claim")
+@lead_router.patch("/leads/{lead_id}/claim")
 def claim_lead(lead_id: int, current_user = Depends(get_current_user), db: Session = Depends(get_db)):
 
     query = select(Lead).where(Lead.id == lead_id, Lead.team_id == current_user.team_id)
     lead = db.execute(query).scalar_one_or_none()
 
     if lead is None:
-        raise HTTPException(status_code=400, detail="Lead not found")
+        raise HTTPException(status_code=404, detail="Lead not found")
+
+    if lead.assigned_to is not None:
+        raise HTTPException(status_code=400, detail="Lead already claimed")
+
+    if lead.completed:
+        raise HTTPException(status_code=400, detail="Lead already completed")
+
+    query = select(LeadBatch).where(LeadBatch.id == lead.batch_id)
+    batch = db.execute(query).scalar_one_or_none()
+
+    if batch is None:
+        raise HTTPException(status_code=404, detail="Batch not found")
+
+    if not batch.published:
+        raise HTTPException(status_code=403, detail="Batch not yet published by manager")
 
     lead.assigned_to = current_user.id
     lead.claimed_at = datetime.now(timezone.utc)
+
+    db.commit()
 
     return {"success": True}
 
