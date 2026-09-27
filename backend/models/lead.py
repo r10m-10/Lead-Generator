@@ -16,6 +16,9 @@ class Lead(Base):
     rating: Mapped[Optional[str]] = mapped_column(String(225), nullable=True)
     flag: Mapped[Optional[int]] = mapped_column(nullable=True, default=None)
     changes: Mapped[Optional[str]] = mapped_column(nullable=True, default=None)
+    assigned_to: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=True, default=None)
+    claimed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, default=None)
+    completed: Mapped[bool] = mapped_column(default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     __table_args__ = (
