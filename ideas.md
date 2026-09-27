@@ -11,3 +11,5 @@
 5. already decided on a chatting feature like slack and stuff to better increase coordination between boss and employees.
 
 6. we could also have a calender feature showing a daily target or montly target set by the boss for the employee or set by the employee himself.
+
+7. another AI usage will be to feed all the completed call outcomes to the AI and evaluate them based on the future actions and then flag those specific leads to the boss. For example, If a user called a lead and the oucome was "user is interested", it is of the max importance to the boss to coordinate with the customer further and hence AI could analyze all the outcomes and give the boss actions as per priority.
