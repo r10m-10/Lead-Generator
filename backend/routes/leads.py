@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
+from sqlalchemy import select, exists
 from sqlalchemy.orm import Session
 import json
 from datetime import datetime, timezone
@@ -191,6 +191,8 @@ def complete_lead(lead_id: int, current_user = Depends(get_current_user), db: Se
     query = select(Lead).where(Lead.id == lead_id, Lead.team_id == current_user.team_id)
     lead = db.execute(query).scalar_one_or_none()
 
+    has_calls = db.execute(select(exists().where(CallRecord.lead_id == lead_id))).scalar()
+
     if lead is None:
         raise HTTPException(status_code=404, detail="Lead not found")
     
@@ -202,6 +204,9 @@ def complete_lead(lead_id: int, current_user = Depends(get_current_user), db: Se
 
     if lead.assigned_to != current_user.id:
         raise HTTPException(status_code=403, detail="Lead claimed by another user")
+
+    if not has_calls:
+        raise HTTPException(status_code=404, detail="no call record found, Log call outcome first")
 
     lead.completed = True
 
