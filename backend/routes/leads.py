@@ -7,7 +7,8 @@ from starlette.concurrency import run_in_threadpool
 from ..database import get_db
 from ..models.lead import Lead
 from ..models.lead_batch import LeadBatch
-from ..schemas.lead import LeadsRequest, LeadReinstate
+from ..models.call_record import CallRecord
+from ..schemas.lead import LeadsRequest, LeadReinstate, LeadLog
 from ..auth_utils import get_current_user
 from scraper.scraper import scraper
 from ..dependencies import get_browser
@@ -157,3 +158,29 @@ def claim_lead(lead_id: int, current_user = Depends(get_current_user), db: Sessi
 
     return {"success": True}
 
+@lead_router.post("/leads/{lead_id}/log")
+def log_lead(lead_id: int, payload: LeadLog, current_user = Depends(get_current_user), db: Session = Depends(get_db)):
+
+    query = select(Lead).where(Lead.id == lead_id, Lead.team_id == current_user.team_id)
+    lead = db.execute(query).scalar_one_or_none()
+
+    if lead is None:
+        raise HTTPException(status_code=404, detail="Lead not found")
+
+    if lead.completed:
+        raise HTTPException(status_code=400, detail="Lead already completed")
+
+    if lead.assigned_to is None:
+        raise HTTPException(status_code=403, detail="Lead not claimed yet")
+
+    if lead.assigned_to != current_user.id:
+        raise HTTPException(status_code=403, detail="Lead claimed by another user")
+
+    new_record = CallRecord(lead_id = lead_id,
+                            user_id = current_user.id,
+                            log = payload.log)
+
+    db.add(new_record)
+    db.commit()
+
+    return {"success": True}

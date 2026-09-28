@@ -9,5 +9,5 @@ class CallRecord(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     lead_id: Mapped[int] = mapped_column(ForeignKey("leads.id"))
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
-    outcome: Mapped[str] = mapped_column()
+    log: Mapped[str] = mapped_column()
     created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
