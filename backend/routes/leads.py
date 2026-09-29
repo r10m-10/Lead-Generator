@@ -136,11 +136,11 @@ def claim_lead(lead_id: int, current_user = Depends(get_current_user), db: Sessi
     if lead is None:
         raise HTTPException(status_code=404, detail="Lead not found")
 
-    if lead.assigned_to is not None:
-        raise HTTPException(status_code=400, detail="Lead already claimed")
-
     if lead.completed:
-        raise HTTPException(status_code=400, detail="Lead already completed")
+        raise HTTPException(status_code=409, detail="Lead already completed")
+
+    if lead.assigned_to is not None:
+        raise HTTPException(status_code=409, detail="Lead already claimed")
 
     query = select(LeadBatch).where(LeadBatch.id == lead.batch_id)
     batch = db.execute(query).scalar_one_or_none()
@@ -168,10 +168,10 @@ def log_lead(lead_id: int, payload: LeadLog, current_user = Depends(get_current_
         raise HTTPException(status_code=404, detail="Lead not found")
 
     if lead.completed:
-        raise HTTPException(status_code=400, detail="Lead already completed")
+        raise HTTPException(status_code=409, detail="Lead already completed")
 
     if lead.assigned_to is None:
-        raise HTTPException(status_code=403, detail="Lead not claimed yet")
+        raise HTTPException(status_code=409, detail="Lead not claimed yet")
 
     if lead.assigned_to != current_user.id:
         raise HTTPException(status_code=403, detail="Lead claimed by another user")
@@ -191,22 +191,22 @@ def complete_lead(lead_id: int, current_user = Depends(get_current_user), db: Se
     query = select(Lead).where(Lead.id == lead_id, Lead.team_id == current_user.team_id)
     lead = db.execute(query).scalar_one_or_none()
 
-    has_calls = db.execute(select(exists().where(CallRecord.lead_id == lead_id))).scalar()
-
     if lead is None:
         raise HTTPException(status_code=404, detail="Lead not found")
     
     if lead.completed:
-        raise HTTPException(status_code=400, detail="Lead already completed")
+        raise HTTPException(status_code=409, detail="Lead already completed")
 
     if lead.assigned_to is None:
-        raise HTTPException(status_code=403, detail="Lead not claimed yet")
+        raise HTTPException(status_code=409, detail="Lead not claimed yet")
 
     if lead.assigned_to != current_user.id:
         raise HTTPException(status_code=403, detail="Lead claimed by another user")
 
+    has_calls = db.execute(select(exists().where(CallRecord.lead_id == lead_id))).scalar()
+
     if not has_calls:
-        raise HTTPException(status_code=400, detail="no call record found, Log call outcome first")
+        raise HTTPException(status_code=409, detail="no call record found, Log call outcome first")
 
     lead.completed = True
 
@@ -224,10 +224,10 @@ def return_lead(lead_id: int, current_user = Depends(get_current_user), db: Sess
         raise HTTPException(status_code=404, detail="Lead not found")
 
     if lead.completed:
-        raise HTTPException(status_code=400, detail="Cannot return a completed Lead")
+        raise HTTPException(status_code=409, detail="Cannot return a completed Lead")
 
     if lead.assigned_to is None:
-        raise HTTPException(status_code=403, detail="Cannot return unclaimed lead")
+        raise HTTPException(status_code=409, detail="Cannot return unclaimed lead")
 
     if lead.assigned_to != current_user.id:
         raise HTTPException(status_code=403, detail="Lead claimed by another user")
