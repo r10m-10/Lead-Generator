@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select, exists
+from sqlalchemy import select, exists, delete
 from sqlalchemy.orm import Session
 import json
 from datetime import datetime, timezone
@@ -206,9 +206,34 @@ def complete_lead(lead_id: int, current_user = Depends(get_current_user), db: Se
         raise HTTPException(status_code=403, detail="Lead claimed by another user")
 
     if not has_calls:
-        raise HTTPException(status_code=404, detail="no call record found, Log call outcome first")
+        raise HTTPException(status_code=400, detail="no call record found, Log call outcome first")
 
     lead.completed = True
+
+    db.commit()
+
+    return {"success": True}
+
+@lead_router.post("/leads/{lead_id}/return")
+def return_lead(lead_id: int, current_user = Depends(get_current_user), db: Session = Depends(get_db)):
+
+    query = select(Lead).where(Lead.id == lead_id, Lead.team_id == current_user.team_id)
+    lead = db.execute(query).scalar_one_or_none()
+
+    if lead is None:
+        raise HTTPException(status_code=404, detail="Lead not found")
+
+    if lead.completed:
+        raise HTTPException(status_code=400, detail="Cannot return a completed Lead")
+
+    if lead.assigned_to is None:
+        raise HTTPException(status_code=403, detail="Cannot return unclaimed lead")
+
+    if lead.assigned_to != current_user.id:
+        raise HTTPException(status_code=403, detail="Lead claimed by another user")
+    
+    lead.assigned_to = None
+    lead.claimed_at = None
 
     db.commit()
 
