@@ -1,4 +1,4 @@
-from .scraper import scraper
+from .scraper_cli import scraper
 from .excel import convert_to_excel
 
 print("""

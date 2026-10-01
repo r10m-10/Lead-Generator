@@ -1,5 +1,15 @@
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 
+def get_places_id(url):
+    s = url.split(sep="!")
+    tmp = None
+    for i in s:
+        if i[:3] == "19s":
+            tmp = i[3:]
+    idx = tmp.find('?')
+    id = tmp[:idx]
+    return id
+
 def scraper(query):
     result = {"leads": [], "error": False}
     browser = None
@@ -51,6 +61,10 @@ def scraper(query):
                 return result
 
             unsucessful = 0
+
+            print(f"""
+HOW MANY LEADS WOULD YOU LIKE TO GENERATE?""")
+            n_leads = int(input(f">  "))
             
             print("\n----------SCRAPING----------")
             while True:
@@ -69,20 +83,26 @@ def scraper(query):
                     print(f"Previous Count: {prev} | Current Count: {new}")
                     if new != prev:
                         unsucessful = 0
-                prev = new            
-            print(f"""
-    FOUND {prev} BUSINESSES
-    HOW MANY LEADS WOULD YOU LIKE TO GENERATE?""")
-            n_leads = int(input(f">  (number between 0 & {prev}):  "))
+                prev = new
+                if prev >= n_leads:
+                    break
 
-            print(f"\n----------GENERATING {n_leads} LEADS----------")
+            if prev >= n_leads:
+                n_busi = n_leads
+            else:
+                n_busi = prev
 
-            for i in range(n_leads):
+            print(f"\n----------GENERATING LEADS----------")
+
+            for i in range(n_busi):
                 card = businesses_loc.nth(i)
                 d = {}
                 name_loc = card.locator("> a")
-                print(name_loc.count())
+
                 d['name'] = name_loc.get_attribute("aria-label")
+
+                url = name_loc.get_attribute("href")
+                d['places_id'] = get_places_id(url)
 
                 print(f"{i+1}. {d['name']}")
 
