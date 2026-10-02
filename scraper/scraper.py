@@ -66,26 +66,29 @@ async def scraper(browser, query, n_leads):
             result["error"] = "Network Error"
             return result
 
-        unsucessful = 0
+        last_business = businesses_loc.nth(prev-1)
 
-        while True:
-            last_business = businesses_loc.nth(prev-1)
-            await last_business.scroll_into_view_if_needed()
-            await scroller.evaluate("(el) => el.scrollBy(0, 100)")
-            await page.wait_for_timeout(2000)
-            try:
-                await page.wait_for_function("""(prev) => document.querySelectorAll('div[role="article"]').length > prev""", arg=prev, timeout=1000)
-            except PlaywrightTimeoutError:
-                unsucessful += 1
-                if unsucessful == 3:
+        unsucessful = 0
+        count = 0
+
+        while count <= n_leads:
+            if count == prev:
+                await last_business.scroll_into_view_if_needed()
+                await scroller.evaluate("(el) => el.scrollBy(0, 100)")
+                await page.wait_for_timeout(2000)
+                try:
+                    await page.wait_for_function("""(prev) => document.querySelectorAll('div[role="article"]').length > prev""", arg=prev, timeout=1000)
+                except PlaywrightTimeoutError:
+                    unsucessful += 1
+                    if unsucessful == 3:
+                        break
+                finally:
+                    new = await businesses_loc.count()
+                    if new != prev:
+                        unsucessful = 0
+                prev = new
+                if prev >= n_leads:
                     break
-            finally:
-                new = await businesses_loc.count()
-                if new != prev:
-                    unsucessful = 0
-            prev = new
-            if prev >= n_leads:
-                break
 
         if prev >= n_leads:
             n_busi = n_leads
