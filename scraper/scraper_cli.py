@@ -4,11 +4,18 @@ def get_places_id(url):
     s = url.split(sep="!")
     tmp = None
     for i in s:
-        if i[:3] == "19s":
+        if i.startswith("19s"):
             tmp = i[3:]
+            break
+
+    if tmp is None:
+        return None
+    
     idx = tmp.find('?')
-    id = tmp[:idx]
-    return id
+    if idx == -1:
+        return tmp
+    
+    return tmp[:idx]
 
 def scraper(query):
     result = {"leads": [], "error": False}
