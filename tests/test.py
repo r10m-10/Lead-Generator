@@ -23,7 +23,7 @@ def scraper(query):
 
     with sync_playwright() as p:
         try:
-            browser = p.firefox.launch(headless=True)
+            browser = p.firefox.launch(headless=False)
             page = browser.new_page()
 
             page.goto("https://www.google.com/maps", timeout=60000)
@@ -55,7 +55,7 @@ def scraper(query):
                 return result
 
             if businesses_loc.first.count() > 0:
-                prev = businesses_loc.count()
+                found = businesses_loc.count()
             elif main.get_by_text("can't find", exact=False).count() > 0:
                 result["error"] = "Invalid Input"
                 return result
@@ -75,28 +75,29 @@ HOW MANY LEADS WOULD YOU LIKE TO GENERATE?""")
             
             print("\n----------SCRAPING----------")
             
-            last_business = businesses_loc.nth(prev-1)
+            last_business = businesses_loc.nth(found-1)
             
             unsucessful = 0
             count = 0
             busi_idx = 0
     
             while count < n_leads:
-                if count == prev:
-                    last_business.scroll_into_view_if_needed()
-                    scroller.evaluate("(el) => el.scrollBy(0, 100)")
-                    page.wait_for_timeout(2000)
-                    try:
-                        page.wait_for_function("""(prev) => document.querySelectorAll('div[role="article"]').length > prev""", arg=prev, timeout=1000)
-                    except PlaywrightTimeoutError:
-                        unsucessful += 1
-                        if unsucessful == 3:
-                            break
-                    finally:
-                        new = businesses_loc.count()
-                        if new != prev:
-                            unsucessful = 0
-                    prev = new
+                found = businesses_loc.count()
+                print(f"num = {found} | idx = {busi_idx} | generated = {count}")
+                if busi_idx == found:
+                   scroller.evaluate("(el) => el.scrollBy(0, 500)")
+                   try:
+                       page.wait_for_function("""(prev) => document.querySelectorAll('div[role="article"]').length > prev""", arg=found, timeout=1000)
+                   except PlaywrightTimeoutError:
+                       if unsucessful == 3:
+                           break
+                       unsucessful += 1
+                       continue
+                   finally:
+                       new = businesses_loc.count()
+                       if new != found:
+                           unsucessful = 0
+                   found = new
     
                 card = businesses_loc.nth(busi_idx)
                 busi_idx += 1
@@ -111,6 +112,9 @@ HOW MANY LEADS WOULD YOU LIKE TO GENERATE?""")
                     continue
     
                 card.click()
+                page.wait_for_timeout(500)
+                card.click()
+
                 try:
                     page.wait_for_function(
                     """
@@ -220,10 +224,7 @@ HOW MANY LEADS WOULD YOU LIKE TO GENERATE?""")
                 
             #     result["leads"].append(d)
         except Exception as e:
-            if len(result["leads"]) > 0:
-                result["error"] = "Error occured during runtime"
-            else:
-                result["error"] = str(e)
+            result["error"] = str(e)
         finally:
             if browser is not None:
                 browser.close()
@@ -232,4 +233,4 @@ HOW MANY LEADS WOULD YOU LIKE TO GENERATE?""")
 
 result = scraper('Dentist in delhi')
 
-print(len(result["leads"]))
+print(f"Generated: {len(result["leads"])}")
