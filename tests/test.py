@@ -1,4 +1,5 @@
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
+import time
 
 def get_places_id(url):
     s = url.split(sep="!")
@@ -67,8 +68,6 @@ def scraper(query):
                 result["error"] = "Network Error"
                 return result
 
-            unsucessful = 0
-
             print(f"""
 HOW MANY LEADS WOULD YOU LIKE TO GENERATE?""")
             n_leads = int(input(f">  "))
@@ -112,7 +111,7 @@ HOW MANY LEADS WOULD YOU LIKE TO GENERATE?""")
                     continue
     
                 card.click()
-                page.wait_for_timeout(500)
+                page.wait_for_timeout(300)
                 card.click()
 
                 try:
@@ -130,11 +129,17 @@ HOW MANY LEADS WOULD YOU LIKE TO GENERATE?""")
                         return newName === name;
                     }
                     """,
-                    arg=d["name"]
+                    arg=d["name"], timeout=1000
                     )
                 except PlaywrightTimeoutError:
+                    if unsucessful == 2:
+                        continue
+                    busi_idx -= 1
+                    unsucessful += 1
                     continue
-                page.wait_for_timeout(1500)
+                unsucessful = 0
+                    
+                #page.wait_for_timeout(1500)
                 
                 phno_loc = page.locator('button[data-item-id^="phone"]')
                 if phno_loc.count() == 0:
@@ -160,69 +165,6 @@ HOW MANY LEADS WOULD YOU LIKE TO GENERATE?""")
                 result['leads'].append(d)
 
                 count += 1
-
-            # if prev >= n_leads:
-            #     n_busi = n_leads
-            # else:
-            #     n_busi = prev
-
-            # print(f"\n----------GENERATING LEADS----------")
-
-            # for i in range(n_busi):
-            #     card = businesses_loc.nth(i)
-            #     d = {}
-            #     name_loc = card.locator("> a")
-
-            #     d['name'] = name_loc.get_attribute("aria-label")
-
-            #     url = name_loc.get_attribute("href")
-            #     d['places_id'] = get_places_id(url)
-
-            #     print(f"{i+1}. {d['name']}")
-
-            #     card.click()
-            #     try:
-            #         page.wait_for_function(
-            #         """
-            #         (name) => {
-            #             const nameLoc = document.querySelector('[role="main"][aria-label]');
-
-            #             if (!nameLoc) {
-            #                 return false;
-            #             }
-
-            #             const newName = nameLoc.getAttribute("aria-label");
-
-            #             return newName === name;
-            #         }
-            #         """,
-            #         arg=d["name"]
-            #         )
-            #     except PlaywrightTimeoutError:
-            #         continue
-            #     page.wait_for_timeout(1500)
-                
-            #     phno_loc = page.locator('button[data-item-id^="phone"]')
-            #     if phno_loc.count() == 0:
-            #         d['phno'] = ""
-            #     else:
-            #         d['phno'] = phno_loc.get_attribute("aria-label")
-                
-            #     website_loc = page.locator('[data-item-id="authority"]')
-            #     if website_loc.count() == 0:
-            #         d['website'] = ""
-            #     else:
-            #         d['website'] = website_loc.get_attribute("href")
-
-            #     rating_loc = card.locator('span[role="img"][aria-label*="stars"]')
-            #     if rating_loc.count() == 0:
-            #         d['rating'] = ""
-            #     else:
-            #         d['rating'] = rating_loc.get_attribute("aria-label")            
-                
-            #     print("GENERATED \n")
-                
-            #     result["leads"].append(d)
         except Exception as e:
             result["error"] = str(e)
         finally:
@@ -230,7 +172,10 @@ HOW MANY LEADS WOULD YOU LIKE TO GENERATE?""")
                 browser.close()
     return result
 
-
+start_time = time.perf_counter()
 result = scraper('Dentist in delhi')
+end_time = time.perf_counter()
 
 print(f"Generated: {len(result["leads"])}")
+
+print(f"Total time = {end_time - start_time}")
