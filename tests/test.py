@@ -111,7 +111,7 @@ HOW MANY LEADS WOULD YOU LIKE TO GENERATE?""")
                     continue
     
                 card.click()
-                page.wait_for_timeout(200)
+                #page.wait_for_timeout(200)
                 card.click()
 
                 try:
