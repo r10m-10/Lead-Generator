@@ -70,6 +70,7 @@ async def scraper(browser, query, n_leads):
 
         unsucessful = 0
         count = 0
+        busi_idx = 0
 
         while count <= n_leads:
             if count == prev:
@@ -87,16 +88,9 @@ async def scraper(browser, query, n_leads):
                     if new != prev:
                         unsucessful = 0
                 prev = new
-                if prev >= n_leads:
-                    break
 
-        if prev >= n_leads:
-            n_busi = n_leads
-        else:
-            n_busi = prev
-
-        for i in range(n_busi):
-            card = businesses_loc.nth(i)
+            card = businesses_loc.nth(busi_idx)
+            busi_idx += 1
             d = {}
             name_loc = card.locator("> a")
             d['name'] = await name_loc.get_attribute("aria-label")
@@ -151,6 +145,68 @@ async def scraper(browser, query, n_leads):
                 d['rating'] = await rating_loc.get_attribute("aria-label")            
             
             result['leads'].append(d)
+
+        # if prev >= n_leads:
+        #     n_busi = n_leads
+        # else:
+        #     n_busi = prev
+
+        # for i in range(n_busi):
+        #     card = businesses_loc.nth(i)
+        #     d = {}
+        #     name_loc = card.locator("> a")
+        #     d['name'] = await name_loc.get_attribute("aria-label")
+
+        #     url = name_loc.get_attribute("href")
+        #     d['places_id'] = get_places_id(url)
+            
+        #     if d["places_id"] is None:
+        #         continue
+
+        #     await card.click()
+        #     try:
+        #         await page.wait_for_function(
+        #         """
+        #         (name) => {
+        #             const nameLoc = document.querySelector('[role="main"][aria-label]');
+
+        #             if (!nameLoc) {
+        #                 return false;
+        #             }
+
+        #             const newName = nameLoc.getAttribute("aria-label");
+
+        #             return newName === name;
+        #         }
+        #         """,
+        #         arg=d["name"]
+        #         )
+        #     except PlaywrightTimeoutError:
+        #         continue
+        #     await page.wait_for_timeout(1500)
+            
+        #     phno_loc = page.locator('button[data-item-id^="phone"]')
+        #     if await phno_loc.count() == 0:
+        #         d['phone_number'] = None
+        #     else:
+        #         d['phone_number'] = await phno_loc.get_attribute("aria-label")
+            
+        #     website_loc = page.locator('[data-item-id="authority"]')
+        #     if await website_loc.count() == 0:
+        #         if d['phone_number'] == None:
+        #             continue
+        #         else:
+        #             d['website'] = None
+        #     else:
+        #         d['website'] = await website_loc.get_attribute("href")
+
+        #     rating_loc = card.locator('span[role="img"][aria-label*="stars"]')
+        #     if await rating_loc.count() == 0:
+        #         d['rating'] = None
+        #     else:
+        #         d['rating'] = await rating_loc.get_attribute("aria-label")            
+            
+        #     result['leads'].append(d)
     except Exception as e:
         if len(result['leads']) > 0:
             result['error'] = "Error occured during runtime"
