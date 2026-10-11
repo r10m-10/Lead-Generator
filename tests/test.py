@@ -139,7 +139,7 @@ HOW MANY LEADS WOULD YOU LIKE TO GENERATE?""")
                     continue
                 unsucessful = 0
                     
-                #page.wait_for_timeout(1500)
+                page.wait_for_timeout(500)
                 
                 phno_loc = page.locator('button[data-item-id^="phone"]')
                 if phno_loc.count() == 0:
