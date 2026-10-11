@@ -24,7 +24,7 @@ def scraper(query):
 
     with sync_playwright() as p:
         try:
-            browser = p.firefox.launch(headless=False)
+            browser = p.firefox.launch(headless=True)
             page = browser.new_page()
 
             page.goto("https://www.google.com/maps", timeout=60000)
@@ -111,7 +111,7 @@ HOW MANY LEADS WOULD YOU LIKE TO GENERATE?""")
                     continue
     
                 card.click()
-                page.wait_for_timeout(300)
+                page.wait_for_timeout(200)
                 card.click()
 
                 try:
@@ -139,7 +139,7 @@ HOW MANY LEADS WOULD YOU LIKE TO GENERATE?""")
                     continue
                 unsucessful = 0
                     
-                page.wait_for_timeout(500)
+                #page.wait_for_timeout(500)
                 
                 phno_loc = page.locator('button[data-item-id^="phone"]')
                 if phno_loc.count() == 0:
