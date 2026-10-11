@@ -55,7 +55,7 @@ def scraper(query):
                 return result
 
             if businesses_loc.first.count() > 0:
-                prev = businesses_loc.count()
+                found = businesses_loc.count()
             elif main.get_by_text("can't find", exact=False).count() > 0:
                 result["error"] = "Invalid Input"
                 return result
@@ -67,104 +67,106 @@ def scraper(query):
                 result["error"] = "Network Error"
                 return result
 
-            unsucessful = 0
-
             print(f"""
 HOW MANY LEADS WOULD YOU LIKE TO GENERATE?""")
             n_leads = int(input(f">  "))
             
             print("\n----------SCRAPING----------")
-            while True:
-                last_business = businesses_loc.nth(prev-1)
-                last_business.scroll_into_view_if_needed()
-                scroller.evaluate("(el) => el.scrollBy(0, 100)")
-                page.wait_for_timeout(2000)
-                try:
-                    page.wait_for_function("""(prev) => document.querySelectorAll('div[role="article"]').length > prev""", arg=prev, timeout=1000)
-                except PlaywrightTimeoutError:
-                    unsucessful += 1
-                    if unsucessful == 3:
-                        break
-                finally:
-                    new = businesses_loc.count()
-                    print(f"Previous Count: {prev} | Current Count: {new}")
-                    if new != prev:
-                        unsucessful = 0
-                prev = new
-                if prev >= n_leads:
-                    break
-
-            if prev >= n_leads:
-                n_busi = n_leads
-            else:
-                n_busi = prev
-
-            print(f"\n----------GENERATING LEADS----------")
-
-            for i in range(n_busi):
-                card = businesses_loc.nth(i)
+            
+            last_business = businesses_loc.nth(found-1)
+            
+            unsucessful = 0
+            count = 0
+            busi_idx = 0
+    
+            while count < n_leads:
+                found = businesses_loc.count()
+                print(f"num = {found} | idx = {busi_idx} | generated = {count}")
+                if busi_idx == found:
+                   scroller.evaluate("(el) => el.scrollBy(0, 500)")
+                   try:
+                       page.wait_for_function("""(prev) => document.querySelectorAll('div[role="article"]').length > prev""", arg=found, timeout=1000)
+                   except PlaywrightTimeoutError:
+                       if unsucessful == 3:
+                           break
+                       unsucessful += 1
+                       continue
+                   finally:
+                       new = businesses_loc.count()
+                       if new != found:
+                           unsucessful = 0
+                   found = new
+    
+                card = businesses_loc.nth(busi_idx)
+                busi_idx += 1
                 d = {}
                 name_loc = card.locator("> a")
-
                 d['name'] = name_loc.get_attribute("aria-label")
-
+    
                 url = name_loc.get_attribute("href")
                 d['places_id'] = get_places_id(url)
-
-                print(f"{i+1}. {d['name']}")
-
+                
+                if d["places_id"] is None:
+                    continue
+    
                 card.click()
+                page.wait_for_timeout(200)
+                card.click()
+
                 try:
                     page.wait_for_function(
                     """
                     (name) => {
                         const nameLoc = document.querySelector('[role="main"][aria-label]');
-
+    
                         if (!nameLoc) {
                             return false;
                         }
-
+    
                         const newName = nameLoc.getAttribute("aria-label");
-
+    
                         return newName === name;
                     }
                     """,
-                    arg=d["name"]
+                    arg=d["name"], timeout=1000
                     )
                 except PlaywrightTimeoutError:
+                    if unsucessful == 3:
+                        continue
+                    busi_idx -= 1
+                    unsucessful += 1
                     continue
-                page.wait_for_timeout(1500)
+                unsucessful = 0
+                    
+                #page.wait_for_timeout(500)
                 
                 phno_loc = page.locator('button[data-item-id^="phone"]')
                 if phno_loc.count() == 0:
-                    d['phno'] = ""
+                    d['phone_number'] = None
                 else:
-                    d['phno'] = phno_loc.get_attribute("aria-label")
+                    d['phone_number'] = phno_loc.get_attribute("aria-label")
                 
                 website_loc = page.locator('[data-item-id="authority"]')
                 if website_loc.count() == 0:
-                    d['website'] = ""
+                    if d['phone_number'] == None:
+                        continue
+                    else:
+                        d['website'] = None
                 else:
                     d['website'] = website_loc.get_attribute("href")
-
+    
                 rating_loc = card.locator('span[role="img"][aria-label*="stars"]')
                 if rating_loc.count() == 0:
-                    d['rating'] = ""
+                    d['rating'] = None
                 else:
                     d['rating'] = rating_loc.get_attribute("aria-label")            
                 
-                print("GENERATED \n")
-                
-                result["leads"].append(d)
+                result['leads'].append(d)
+
+                count += 1
         except Exception as e:
-            if len(result["leads"]) > 0:
-                result["error"] = "Error occured during runtime"
-            else:
-                result["error"] = str(e)
+            result["error"] = str(e)
         finally:
             if browser is not None:
                 browser.close()
     return result
-
-
-print(scraper('Dentist in delhi'))
