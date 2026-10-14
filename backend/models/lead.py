@@ -10,6 +10,7 @@ class Lead(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     batch_id: Mapped[int] = mapped_column(ForeignKey("lead_batches.id"))
     team_id: Mapped[int] = mapped_column(ForeignKey("teams.id"))
+    place_id: Mapped[str] = mapped_column()
     name: Mapped[str] = mapped_column()
     phone_number: Mapped[Optional[str]] = mapped_column(String(225), nullable=True)
     website: Mapped[Optional[str]] = mapped_column(nullable=True)

@@ -13,6 +13,7 @@ from ..auth_utils import get_current_user
 from scraper.scraper import scraper
 from ..dependencies import get_browser
 from ..utils import make_changes
+import time
 
 lead_router = APIRouter()
 
@@ -35,8 +36,13 @@ async def generate_leads(payload: LeadsRequest, current_user = Depends(get_curre
     if current_user.role != "boss":
         raise HTTPException(status_code=403, detail="Need to be the manager to generate leads for this team")
 
+    query = select(Lead.place_id).where(Lead.team_id == current_user.team_id)
+    place_ids = await db.execute(query).scalars().all()
+
     for batch in payload.batches:
-        scraped = await scraper(browser, batch.query, batch.n_leads)
+        start_time = time.perf_counter()
+        scraped = await scraper(browser, batch.query, batch.n_leads, place_ids)
+        end_time = time.perf_counter()
 
         if scraped["error"]:
             raise HTTPException(status_code=400, detail=scraped["error"])
@@ -74,7 +80,7 @@ async def generate_leads(payload: LeadsRequest, current_user = Depends(get_curre
                 db.add(new_lead)
     await run_in_threadpool(db.commit)
 
-    return {"success": True}
+    return {"success": True, "time": end_time-start_time}
 
 @lead_router.patch("/leads/reinstate")
 def reinstate(payload: LeadReinstate, current_user = Depends(get_current_user), db: Session = Depends(get_db)):

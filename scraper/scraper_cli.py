@@ -1,7 +1,7 @@
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 import time
 
-def get_places_id(url):
+def get_place_id(url):
     s = url.split(sep="!")
     tmp = None
     for i in s:
@@ -104,9 +104,9 @@ def scraper(query, n_leads):
                 d['name'] = name_loc.get_attribute("aria-label")
     
                 url = name_loc.get_attribute("href")
-                d['places_id'] = get_places_id(url)
+                d['place_id'] = get_place_id(url)
                 
-                if d["places_id"] is None:
+                if d["place_id"] is None:
                     continue
     
                 card.click()

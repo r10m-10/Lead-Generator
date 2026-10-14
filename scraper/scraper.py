@@ -1,6 +1,6 @@
 from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 
-def get_places_id(url):
+def get_place_id(url):
     s = url.split(sep="!")
     tmp = None
     for i in s:
@@ -17,7 +17,7 @@ def get_places_id(url):
     
     return tmp[:idx]
 
-async def scraper(browser, query, n_leads):
+async def scraper(browser, query, n_leads, place_ids):
     result = {"leads": [], "error": False}
     context = None
 
@@ -93,10 +93,10 @@ async def scraper(browser, query, n_leads):
             name_loc = card.locator("> a")
             d['name'] = await name_loc.get_attribute("aria-label")
 
-            url = name_loc.get_attribute("href")
-            d['places_id'] = get_places_id(url)
+            url = await name_loc.get_attribute("href")
+            d['place_id'] = get_place_id(url)
             
-            if d["places_id"] is None:
+            if d["place_id"] is None:
                 continue
 
             await card.click()
@@ -149,7 +149,8 @@ async def scraper(browser, query, n_leads):
             
             result['leads'].append(d)
 
-            count += 1
+            if d["place_id"] not in place_ids:
+                count += 1
     except Exception as e:
         if len(result['leads']) > 0:
             result['error'] = "Error occured during runtime"
