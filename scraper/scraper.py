@@ -54,7 +54,7 @@ async def scraper(browser, query, n_leads):
             return result
 
         if await businesses_loc.first.count() > 0:
-            prev = await businesses_loc.count()
+            found = await businesses_loc.count()
         elif await main.get_by_text("can't find", exact=False).count() > 0:
             result["error"] = "Invalid Input"
             return result
@@ -66,28 +66,26 @@ async def scraper(browser, query, n_leads):
             result["error"] = "Network Error"
             return result
 
-        last_business = businesses_loc.nth(prev-1)
-
         unsucessful = 0
         count = 0
         busi_idx = 0
 
         while count <= n_leads:
-            if count == prev:
-                await last_business.scroll_into_view_if_needed()
+            found = await businesses_loc.count()
+            if busi_idx == found:
                 await scroller.evaluate("(el) => el.scrollBy(0, 100)")
-                await page.wait_for_timeout(2000)
                 try:
-                    await page.wait_for_function("""(prev) => document.querySelectorAll('div[role="article"]').length > prev""", arg=prev, timeout=1000)
+                    await page.wait_for_function("""(prev) => document.querySelectorAll('div[role="article"]').length > prev""", arg=found, timeout=1000)
                 except PlaywrightTimeoutError:
-                    unsucessful += 1
                     if unsucessful == 3:
                         break
+                    unsucessful += 1
+                    continue
                 finally:
                     new = await businesses_loc.count()
-                    if new != prev:
+                    if new != found:
                         unsucessful = 0
-                prev = new
+                found = new
 
             card = businesses_loc.nth(busi_idx)
             busi_idx += 1
@@ -102,6 +100,7 @@ async def scraper(browser, query, n_leads):
                 continue
 
             await card.click()
+
             try:
                 await page.wait_for_function(
                 """
@@ -120,8 +119,12 @@ async def scraper(browser, query, n_leads):
                 arg=d["name"]
                 )
             except PlaywrightTimeoutError:
+                if unsucessful == 3:
+                    continue
+                busi_idx -= 1
+                unsucessful += 1
                 continue
-            await page.wait_for_timeout(1500)
+            unsucessful = 0
             
             phno_loc = page.locator('button[data-item-id^="phone"]')
             if await phno_loc.count() == 0:
@@ -146,67 +149,7 @@ async def scraper(browser, query, n_leads):
             
             result['leads'].append(d)
 
-        # if prev >= n_leads:
-        #     n_busi = n_leads
-        # else:
-        #     n_busi = prev
-
-        # for i in range(n_busi):
-        #     card = businesses_loc.nth(i)
-        #     d = {}
-        #     name_loc = card.locator("> a")
-        #     d['name'] = await name_loc.get_attribute("aria-label")
-
-        #     url = name_loc.get_attribute("href")
-        #     d['places_id'] = get_places_id(url)
-            
-        #     if d["places_id"] is None:
-        #         continue
-
-        #     await card.click()
-        #     try:
-        #         await page.wait_for_function(
-        #         """
-        #         (name) => {
-        #             const nameLoc = document.querySelector('[role="main"][aria-label]');
-
-        #             if (!nameLoc) {
-        #                 return false;
-        #             }
-
-        #             const newName = nameLoc.getAttribute("aria-label");
-
-        #             return newName === name;
-        #         }
-        #         """,
-        #         arg=d["name"]
-        #         )
-        #     except PlaywrightTimeoutError:
-        #         continue
-        #     await page.wait_for_timeout(1500)
-            
-        #     phno_loc = page.locator('button[data-item-id^="phone"]')
-        #     if await phno_loc.count() == 0:
-        #         d['phone_number'] = None
-        #     else:
-        #         d['phone_number'] = await phno_loc.get_attribute("aria-label")
-            
-        #     website_loc = page.locator('[data-item-id="authority"]')
-        #     if await website_loc.count() == 0:
-        #         if d['phone_number'] == None:
-        #             continue
-        #         else:
-        #             d['website'] = None
-        #     else:
-        #         d['website'] = await website_loc.get_attribute("href")
-
-        #     rating_loc = card.locator('span[role="img"][aria-label*="stars"]')
-        #     if await rating_loc.count() == 0:
-        #         d['rating'] = None
-        #     else:
-        #         d['rating'] = await rating_loc.get_attribute("aria-label")            
-            
-        #     result['leads'].append(d)
+            count += 1
     except Exception as e:
         if len(result['leads']) > 0:
             result['error'] = "Error occured during runtime"

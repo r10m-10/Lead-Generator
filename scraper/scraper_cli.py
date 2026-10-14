@@ -1,4 +1,5 @@
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
+import time
 
 def get_places_id(url):
     s = url.split(sep="!")
@@ -17,7 +18,7 @@ def get_places_id(url):
     
     return tmp[:idx]
 
-def scraper(query):
+def scraper(query, n_leads):
     result = {"leads": [], "error": False}
     browser = None
 
@@ -67,23 +68,22 @@ def scraper(query):
                 result["error"] = "Network Error"
                 return result
 
-            print(f"""
-HOW MANY LEADS WOULD YOU LIKE TO GENERATE?""")
-            n_leads = int(input(f">  "))
+#            print(f"""
+#HOW MANY LEADS WOULD YOU LIKE TO GENERATE?""")
+#            n_leads = int(input(f">  "))
             
             print("\n----------SCRAPING----------")
-            
-            last_business = businesses_loc.nth(found-1)
             
             unsucessful = 0
             count = 0
             busi_idx = 0
-    
+
             while count < n_leads:
                 found = businesses_loc.count()
                 print(f"num = {found} | idx = {busi_idx} | generated = {count}")
                 if busi_idx == found:
                    scroller.evaluate("(el) => el.scrollBy(0, 500)")
+                   #page.wait_for_timeout(500)
                    try:
                        page.wait_for_function("""(prev) => document.querySelectorAll('div[role="article"]').length > prev""", arg=found, timeout=1000)
                    except PlaywrightTimeoutError:
@@ -110,8 +110,7 @@ HOW MANY LEADS WOULD YOU LIKE TO GENERATE?""")
                     continue
     
                 card.click()
-                page.wait_for_timeout(200)
-                card.click()
+                #card.click()
 
                 try:
                     page.wait_for_function(
@@ -170,3 +169,14 @@ HOW MANY LEADS WOULD YOU LIKE TO GENERATE?""")
             if browser is not None:
                 browser.close()
     return result
+
+start_time = time.perf_counter()
+result = scraper('Dentist in delhi', 200)
+end_time = time.perf_counter()
+
+print(f"Generated: {len(result["leads"])}")
+
+print(f"Total time = {end_time - start_time}")
+
+# single click: 120.78098311699978, 117.70952391399987, 141.16551502899983, 106.74268169900006, 113.94695894799952
+# double click: 142.6408006699994, 114.00044344599883, 141.9970840570004, 129.54850487299882, 136.22202521200052
