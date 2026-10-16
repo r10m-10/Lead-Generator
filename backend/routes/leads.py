@@ -36,10 +36,13 @@ async def generate_leads(payload: LeadsRequest, current_user = Depends(get_curre
     if current_user.role != "boss":
         raise HTTPException(status_code=403, detail="Need to be the manager to generate leads for this team")
 
-    query = select(Lead.place_id).where(Lead.team_id == current_user.team_id)
-    place_ids = await db.execute(query).scalars().all()
-
     for batch in payload.batches:
+
+        query = select(Lead.place_id).where(Lead.team_id == current_user.team_id)
+        place_ids = await run_in_threadpool(
+            lambda: set(db.execute(query).scalars())
+            )
+
         start_time = time.perf_counter()
         scraped = await scraper(browser, batch.query, batch.n_leads, place_ids)
         end_time = time.perf_counter()
@@ -53,7 +56,7 @@ async def generate_leads(payload: LeadsRequest, current_user = Depends(get_curre
         db.flush()
 
         for i in scraped["leads"]:
-            query = select(Lead).where(Lead.phone_number == i["phone_number"], Lead.team_id == current_user.team_id)
+            query = select(Lead).where(Lead.place_id == i["place_id"], Lead.team_id == current_user.team_id)
             lead = await run_in_threadpool(
                 lambda: db.execute(query).scalar_one_or_none()
                 )
@@ -73,6 +76,7 @@ async def generate_leads(payload: LeadsRequest, current_user = Depends(get_curre
             else:
                 new_lead = Lead(batch_id = new_batch.id,
                                 team_id= current_user.team_id,
+                                place_id = i["place_id"],
                                 name= i["name"],
                                 phone_number= i["phone_number"],
                                 website= i["website"],
