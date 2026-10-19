@@ -70,7 +70,7 @@ async def scraper(browser, query, n_leads, place_ids):
         count = 0
         busi_idx = 0
 
-        while count <= n_leads:
+        while count < n_leads:
             found = await businesses_loc.count()
             if busi_idx == found:
                 await scroller.evaluate("(el) => el.scrollBy(0, 100)")
@@ -116,10 +116,10 @@ async def scraper(browser, query, n_leads, place_ids):
                     return newName === name;
                 }
                 """,
-                arg=d["name"]
-                )
+                arg=d["name"], timeout=1000)
             except PlaywrightTimeoutError:
                 if unsucessful == 3:
+                    unsucessful = 0
                     continue
                 busi_idx -= 1
                 unsucessful += 1
