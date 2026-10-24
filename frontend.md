@@ -1,18 +1,18 @@
 # FRONTEND DECISIONS
 
 1. Signup will have 4 pages:
-    - PAGE-1: ask for name, email and password. Call `/user/check-email` endpoint.
-    - PAGE-2: ask for username. Call `user/check-username` endpoint.
+    - PAGE-1: ask for name, email and password. Call `/users/check-email` endpoint.
+    - PAGE-2: ask for username. Call `users/check-username` endpoint.
     - PAGE-3: ask for signup type - Business/Indivisual
-    - PAGE-4: ask for team name if signup type is business. Finally, single API call to `/user` to create the user.
+    - PAGE-4: ask for team name if signup type is business. Finally, single API call to `/users` to create the user.
 
-2. Auth token storage: JWT will be stored in httpOnly cookies and not in lockalStorage.
+2. Auth token storage: JWT will be stored in httpOnly cookies and not in localStorage.
 
 3. Leads Dashboard will have 2 sections:
     - New Leads: Freshly generated leads.
     - Duplicate leads: these are the leads that already exist on the database. These leads have specific codes to signify what type of duplicate are they. The codes are:-
 
-        `0 = new name and email` \| `1 = new name, same email` \| `2 = same name, new email` \| `3 = complete duplicate`
+        `0 = new name and website` \| `1 = new name, same website` \| `2 = same name, new website` \| `3 = complete duplicate`
      
         These number codes also signify the priority order in which these duplicate leads should be displayed in the frontend - 0 being the highest and 3 being the lowest.
 

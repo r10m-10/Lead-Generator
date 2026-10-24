@@ -116,7 +116,7 @@ async def scraper(browser, query, n_leads, place_ids):
                     return newName === name;
                 }
                 """,
-                arg=d["name"], timeout=1000)
+                arg=d["name"], timeout=5000)
             except PlaywrightTimeoutError:
                 if unsucessful == 3:
                     unsucessful = 0
