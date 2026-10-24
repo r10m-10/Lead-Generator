@@ -29,3 +29,8 @@
 9. There will also be a "+" button at the bottom of each "query box" of "query batch" so that a user can add another query box and mix and match how many leads they want and what queries they want. both questions are required for a query and hence there will be a continue button only when both a re filled. If the user adds a new box then the continue button will again disappear until both of the new questions are filled and so on and so forth.
 
 10. We need a new "Manage Leads" tab where the user can do all sorts of stuff with their leads like view generation history, view all batches, push generated batches to the team, remove batches, break up batches, set deadline on batches, etc.
+
+11. The manage leads tab will query the "/batches" endpoint to list all the batches chronologically. The batches will be like a rectangular card and will show the query that generated that batch. Then, the user can click on any batch to view all the leads generated inside that batch. There, the user can also find all the batch management settings such as publish batch, delete batch, break batch, set deadline and other (TBD) batch related functions. Also, duplicate leads will be handled as follows:
+Generate 10 leads -> 5 duplicate leads -> show popup saying "this query generated some duplicate leads, check out the flagged batches" -> user goes back to the manage leads tab and checks out all the batches with the duplicate leads -> user will be able to reinstate required leads and extend deadline if required.
+**NOTE:** Reinstating lead will make it pop up straight back up on the employee table as a fresh lead.
+Also, batches cannot be un-published.

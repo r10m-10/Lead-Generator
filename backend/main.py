@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from .database  import init_db
 from .routes.auth import auth_router
 from .routes.leads import lead_router
+from .routes.batches import batch_router
 from dotenv import load_dotenv
 from playwright.async_api import async_playwright
 
@@ -24,6 +25,7 @@ app = FastAPI(lifespan=lifespan)
 
 app.include_router(auth_router)
 app.include_router(lead_router)
+app.include_router(batch_router)
 
 @app.get('/health')
 def health():
