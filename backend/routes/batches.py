@@ -28,6 +28,22 @@ def get_batches(current_user = Depends(get_current_user), db: Session = Depends(
 
     return {"success": True, "batches": batches}
 
+@batch_router.get("/batches/{batch_id}")
+def get_batch(batch_id: int, current_user = Depends(get_current_user), db: Session = Depends(get_db)):
+
+    if current_user.role != "boss":
+        raise HTTPException(status_code=403, detail="Need to be the manager to view batch")
+
+    batch = db.execute(select(LeadBatch).where(LeadBatch.id == batch_id, LeadBatch.team_id == current_user.team_id)).scalar_one_or_none()
+
+    if batch is None:
+        raise HTTPException(status_code=404, detail="Batch not found")
+
+    query = select(Lead).where(Lead.batch_id == batch_id, Lead.team_id == current_user.team_id)
+    leads = db.execute(query).scalars().all()
+
+    return {"success": True, "batch": batch, "leads": leads}
+
 @batch_router.patch("/batches/{batch_id}/publish")
 def publish_batch(batch_id: int, current_user = Depends(get_current_user), db: Session = Depends(get_db)):
 
