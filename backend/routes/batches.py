@@ -45,3 +45,25 @@ def publish_batch(batch_id: int, current_user = Depends(get_current_user), db: S
     db.commit()
 
     return {"success": True}
+
+@batch_router.delete("/batches/{batch_id}/delete")
+def delete_batch(batch_id: int, current_user = Depends(get_current_user), db: Session = Depends(get_db)):
+
+    if current_user.role != "boss":
+        raise HTTPException(status_code=403, detail="Need to be the manager to delete batch")
+
+    query = select(LeadBatch).where(LeadBatch.id == batch_id, LeadBatch.team_id == current_user.team_id)
+    batch = db.execute(query).scalar_one_or_none()
+
+    if batch is None:
+        raise HTTPException(status_code=404, detail="Batch not found")
+
+    lead_ids = select(Lead.id).where(Lead.batch_id == batch_id, Lead.team_id == current_user.team_id)
+
+    db.execute(delete(CallRecord).where(CallRecord.lead_id.in_(lead_ids)))
+    db.execute(delete(Lead).where(Lead.batch_id == batch_id, Lead.team_id == current_user.team_id))
+    db.execute(delete(LeadBatch).where(LeadBatch.id == batch_id, LeadBatch.team_id == current_user.team_id))
+
+    db.commit()
+
+    return {"success": True}
