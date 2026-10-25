@@ -9,6 +9,7 @@ from ..models.lead import Lead
 from ..models.lead_batch import LeadBatch
 from ..models.call_record import CallRecord
 from ..schemas.lead import LeadsRequest, LeadReinstate, LeadLog
+from ..schemas.batch import DeadlineRequest
 from ..auth_utils import get_current_user
 from scraper.scraper import scraper
 from ..dependencies import get_browser
@@ -84,3 +85,20 @@ def delete_batch(batch_id: int, current_user = Depends(get_current_user), db: Se
 
     return {"success": True}
 
+@batch_router.patch("/batches/{batch_id}/deadline")
+def set_deadline(batch_id: int, payload: DeadlineRequest, current_user = Depends(get_current_user), db: Session = Depends(get_db)):
+
+    if current_user.role != "boss":
+        raise HTTPException(status_code=403, detail="Need to be the manager to set deadline for the batch")
+
+    query = select(LeadBatch).where(LeadBatch.id == batch_id, LeadBatch.team_id == current_user.team_id)
+    batch = db.execute(query).scalar_one_or_none()
+    
+    if batch is None:
+        raise HTTPException(status_code=404, detail="Batch not found")
+
+    batch.deadline = payload.deadline
+
+    db.commit()
+
+    return {"success": True}
