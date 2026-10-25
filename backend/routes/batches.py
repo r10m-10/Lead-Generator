@@ -83,3 +83,4 @@ def delete_batch(batch_id: int, current_user = Depends(get_current_user), db: Se
     db.commit()
 
     return {"success": True}
+

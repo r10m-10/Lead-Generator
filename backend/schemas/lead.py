@@ -1,5 +1,4 @@
 from pydantic import BaseModel, model_validator, Field, ConfigDict
-from datetime import datetime
 from typing import Optional, List
 
 class QueryBatch(BaseModel):
