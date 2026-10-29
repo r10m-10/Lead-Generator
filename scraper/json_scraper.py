@@ -22,16 +22,10 @@ if raw_text.startswith(")]}'"):
 decoder = json.JSONDecoder()
 data, idx = decoder.raw_decode(raw_text.strip())
 
-#data = data[64]
+data = data[64][0][1]
 
-#with open("gmaps_debug.json", "w", encoding="utf-8") as f:
-#    json.dump(data, f, indent=2, ensure_ascii=False)
-
-for i in range(20):
-    try:
-        print(f"phno: {data[64][i][1][178][0][5][0]} | type: {type(data[64][i][1][178][0][5][0])}")
-    except TypeError:
-        print(f"Not Found for business {i}")
+with open("gmaps_debug.json", "w", encoding="utf-8") as f:
+    json.dump(data, f, indent=2, ensure_ascii=False)
 
 #[64][0][1][4][7] -> stars - CONFIRMED (int/float, need to convert to string in the end)
 #[64][0][1][4][8] -> reviews - CONFIRMED (all int, need to convert to string in the end)
