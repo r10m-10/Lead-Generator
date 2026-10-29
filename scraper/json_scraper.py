@@ -28,27 +28,15 @@ data, idx = decoder.raw_decode(raw_text.strip())
 #    json.dump(data, f, indent=2, ensure_ascii=False)
 
 for i in range(20):
-    print(f"stars: {data[64][i][1][4][7]})
+    try:
+        print(f"phno: {data[64][i][1][178][0][5][0]} | type: {type(data[64][i][1][178][0][5][0])}")
+    except TypeError:
+        print(f"Not Found for business {i}")
 
-#[64][0][1][4][7] -> stars
-#[64][0][1][4][8] -> reviews
-#[64][0][1][7][0] -> website
-#[64][0][1][11] -> name
-#[64][0][1][18]-> address
-#[64][0][1][37][0][0][17][0]-> address
-#[64][0][1][39]-> address
-#[64][0][1][72][0][0][17][0]-> address
-#[64][0][1][72][0][1][17][0]-> address
-#[64][0][1][78]-> place ID
-#[64][0][1][82]-> address
-#[64][0][1][88][3]-> name
-#[64][0][1][178][0][0]-> phno
-#[64][0][1][178][0][1][0][0]-> phno
-#[64][0][1][178][0][1][1][0]-> phno
-#[64][0][1][178][0][3]-> phno
-#[64][0][1][178][0][5][0]-> phno
-#[64][0][1][183][0][0][1][0][0]-> name
-#[64][0][1][183][0][1][1][0][0]-> address
-#[64][0][1][183][0][2][1][0][0]-> address
-#[64][0][1][183][1]-> address
-#[64][0][1][227][0][4]-> places ID
+#[64][0][1][4][7] -> stars - CONFIRMED (int/float, need to convert to string in the end)
+#[64][0][1][4][8] -> reviews - CONFIRMED (all int, need to convert to string in the end)
+#[64][0][1][7][0] -> website - CONFIRMED (try/except to catch TypeError when no website; type: str)
+#[64][0][1][11] -> name - CONFIRMED (type: str)
+#[64][0][1][18]-> address - CONFIRMED (type: str)
+#[64][0][1][78]-> place ID - CONFIRMED (type: str)
+#[64][0][1][178][0][1][1][0]-> phno - CONFIRMED (type: str)
