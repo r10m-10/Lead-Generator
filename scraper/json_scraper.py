@@ -22,6 +22,21 @@ if raw_text.startswith(")]}'"):
 decoder = json.JSONDecoder()
 data, idx = decoder.raw_decode(raw_text.strip())
 
+field_idx = {
+    'name': lambda l: l[1][11],
+    'phone_number': lambda l: l[1][178][0][1][1][0],
+    'website': lambda l: l[1][7][0],
+    'stars': lambda l: str(l[1][4][7]),
+    'reviews': lambda l: str(l[1][4][8]),
+    'address': lambda l: l[1][18]
+    }
+
+def create_field(field, business):
+    try:
+        d[field] = field_idx[field](business)
+    except (TypeError, IndexError):
+        d[field] = None
+
 data = data[64]
 leads = []
 
@@ -33,59 +48,16 @@ for i in data:
     except (TypeError, IndexError):
         continue
 
-    try:
-        d['name'] = i[1][11]
-    except (TypeError, IndexError):
-        d['name'] = None
-
-    try:
-        d['phone_number'] = i[1][178][0][1][1][0]
-    except (TypeError, IndexError):
-        d['phone_number'] = None
-
-    try:
-        d['website'] = i[1][7][0]
-    except (TypeError, IndexError):
-        d['website'] = None
-
-    if d["website"] == d["phone_number"] == None:
-        continue
-
-    try:
-        d['stars'] = str(i[1][4][7])
-    except (TypeError, IndexError):
-        d['stars'] = None
-
-    try:
-        d['reviews'] = str(i[1][4][8])
-    except (TypeError, IndexError):
-        d['reviews'] = None
-
-    try:
-        d['address'] = i[1][18]
-    except (TypeError, IndexError):
-        d['address'] = None
+    create_field('name', i)
+    create_field('phone_number', i)
+    create_field('website', i)
+    create_field('stars', i)
+    create_field('reviews', i)
+    create_field('address', i)
 
     leads.append(d)
 
 with open("gmaps_debug.json", "w", encoding="utf-8") as f:
     json.dump(data, f, indent=2, ensure_ascii=False)
 
-#[64][0][1][4][7] -> stars - CONFIRMED (int/float, need to convert to string in the end)
-#[64][0][1][4][8] -> reviews - CONFIRMED (all int, need to convert to string in the end)
-#[64][0][1][7][0] -> website - CONFIRMED (try/except to catch TypeError when no website; type: str)
-#[64][0][1][11] -> name - CONFIRMED (type: str)
-#[64][0][1][18]-> address - CONFIRMED (type: str)
-#[64][0][1][78]-> place ID - CONFIRMED (type: str)
-#[64][0][1][178][0][1][1][0]-> phno - CONFIRMED (type: str)
-
-dict = {'name': lambda l: l[1][11], 
-        'phone_number': lambda l: l[1][178][0][1][1][0], 
-        'website': lambda l: l[1][7][0], 
-        'stars': lambda l: l[1][4][7], 
-        'reviews': lambda l: l[1][4][8], 
-        'address': lambda l: l[1][18]}
-
-l = [1, [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]]
-
-print(dict['name'](l))
+print(leads)
