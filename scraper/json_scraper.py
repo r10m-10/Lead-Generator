@@ -22,7 +22,7 @@ def create_field(field, business):
 query = "dentists"
 url = "https://www.google.com/search"
 offset = 0
-n_leads = 300
+n_leads = 500
 lng = 77.17191677375331
 lat = 28.586875456779826
 view_size = 19816.27571701334
@@ -51,18 +51,6 @@ for n in range(1):
     data, idx = decoder.raw_decode(raw_text.strip())
 
     data = data[64]
-
-    with open("gmaps_debug.json", "w", encoding="utf-8") as f:
-        json.dump(data[7], f, indent=2, ensure_ascii=False)
-
-    found = len(data)
-
-    print(f"Found: {found}")
-
-    for i in range(found):
-        print(data[i][1][9][3])
-
-    break
 
     leads = []
     dropped = {}
