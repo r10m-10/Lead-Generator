@@ -36,12 +36,14 @@ async def generate_leads(payload: LeadsRequest, current_user = Depends(get_curre
     if current_user.role != "boss":
         raise HTTPException(status_code=403, detail="Need to be the manager to generate leads for this team")
 
-    for batch in payload.batches:
+    query = select(Lead.place_id).where(Lead.team_id == current_user.team_id)
+    before = await run_in_threadpool(lambda: set(db.execute(query).scalars()))
 
-        query = select(Lead.place_id).where(Lead.team_id == current_user.team_id)
-        place_ids = await run_in_threadpool(
-            lambda: set(db.execute(query).scalars())
-            )
+    added = set()
+
+    status = {}
+    
+    for idx, batch in enumerate(payload.batches):
 
         start_time = time.perf_counter()
         scraped = await scraper(browser, batch.query, batch.n_leads, place_ids)
@@ -55,25 +57,37 @@ async def generate_leads(payload: LeadsRequest, current_user = Depends(get_curre
         db.add(new_batch)
         db.flush()
 
-        for i in scraped["leads"]:
-            query = select(Lead).where(Lead.place_id == i["place_id"], Lead.team_id == current_user.team_id)
-            lead = await run_in_threadpool(
-                lambda: db.execute(query).scalar_one_or_none()
-                )
+        new_leads = f0 = f1 = f2 = f3 = 0
 
-            if lead is not None:
+        for i in scraped["leads"]:
+
+            pid = i["place_id"]
+
+            if pid in added:
+                continue
+
+            if pid in before:
+                query = select(Lead).where(Lead.place_id == i["place_id"], Lead.team_id == current_user.team_id)
+                lead = await run_in_threadpool(lambda: db.execute(query).scalar_one())
+
                 if lead.name != i["name"] and lead.website != i["website"]:
+                    f0 += 1
                     lead.flag = 0
                     lead.changes = json.dumps({"name": i["name"], "website": i["website"]})
                 elif lead.name != i["name"]:
+                    f1 += 1
                     lead.flag = 1
                     lead.changes = json.dumps({"name": i["name"]})
                 elif lead.website != i["website"]:
+                    f2 += 1
                     lead.flag = 2
                     lead.changes = json.dumps({"website": i["website"]})
                 else:
+                    f3 += 1
                     lead.flag = 3
             else:
+                new_leads += 1
+                added.add(pid)
                 new_lead = Lead(batch_id = new_batch.id,
                                 team_id= current_user.team_id,
                                 place_id = i["place_id"],
@@ -82,9 +96,15 @@ async def generate_leads(payload: LeadsRequest, current_user = Depends(get_curre
                                 website= i["website"],
                                 rating= i["rating"])
                 db.add(new_lead)
+        
+        if new_leads == 0:
+            db.delete(new_batch)
+
+        status[idx] = {"success": True, "time": end_time-start_time, "new_leads": new_leads, "duplicate_leads": {"f0": f0, "f1": f1, "f2": f2, "f3": f3}}
+    
     await run_in_threadpool(db.commit)
 
-    return {"success": True, "time": end_time-start_time}
+    return {"success": True, "result": status}
 
 @lead_router.patch("/leads/reinstate")
 def reinstate(payload: LeadReinstate, current_user = Depends(get_current_user), db: Session = Depends(get_db)):
