@@ -139,24 +139,6 @@ def reinstate(payload: LeadReinstate, current_user = Depends(get_current_user), 
 
     return {"success": True}
 
-@lead_router.patch("/leads/{batch_id}/publish")
-def publish_batch(batch_id: int, current_user = Depends(get_current_user), db: Session = Depends(get_db)):
-
-    if current_user.role != "boss":
-        raise HTTPException(status_code=403, detail="Need to be the manager to publish leads for this team")
-
-    query = select(LeadBatch).where(LeadBatch.id == batch_id, LeadBatch.team_id == current_user.team_id)
-    batch = db.execute(query).scalar_one_or_none()
-
-    if batch is None:
-        raise HTTPException(status_code=404, detail="Batch not found")
-
-    batch.published = True
-
-    db.commit()
-
-    return {"success": True}
-
 @lead_router.patch("/leads/{lead_id}/claim")
 def claim_lead(lead_id: int, current_user = Depends(get_current_user), db: Session = Depends(get_db)):
 
