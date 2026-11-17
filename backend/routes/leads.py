@@ -94,6 +94,7 @@ async def generate_leads(payload: LeadsRequest, current_user = Depends(get_curre
                                 name= i["name"],
                                 phone_number= i["phone_number"],
                                 website= i["website"],
+                                address= i["address"],
                                 rating= i["rating"])
                 db.add(new_lead)
         

@@ -141,6 +141,12 @@ async def scraper(browser, query, n_leads, place_ids):
             else:
                 d['website'] = await website_loc.get_attribute("href")
 
+            address_loc = page.locator('[data-item-id="address"]')
+            if await address_loc.count() == 0:
+                d["address"] = None
+            else:
+                d["address"] = await address_loc.get_attribute("aria-label")
+
             rating_loc = card.locator('span[role="img"][aria-label*="stars"]')
             if await rating_loc.count() == 0:
                 d['rating'] = None

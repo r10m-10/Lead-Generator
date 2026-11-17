@@ -153,6 +153,12 @@ def scraper(query, n_leads):
                         d['website'] = None
                 else:
                     d['website'] = website_loc.get_attribute("href")
+
+                address_loc = page.locator('[data-item-id="address"]')
+                if address_loc.count() == 0:
+                    d["address"] = None
+                else:
+                    d["address"] = address_loc.get_attribute("aria-label")
     
                 rating_loc = card.locator('span[role="img"][aria-label*="stars"]')
                 if rating_loc.count() == 0:
