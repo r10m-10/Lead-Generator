@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select, exists, delete
+from sqlalchemy import select, exists, delete, func, case
 from sqlalchemy.orm import Session
 import json
 from datetime import datetime, timezone
@@ -24,8 +24,15 @@ def get_batches(current_user = Depends(get_current_user), db: Session = Depends(
     if current_user.role != "boss":
         raise HTTPException(status_code=403, detail="Need to be the manager to view batches")
 
-    query = select(LeadBatch).where(LeadBatch.team_id == current_user.team_id)
-    batches = db.execute(query).scalars().all()
+    query = select(LeadBatch.id,
+                   LeadBatch.team_id,
+                   LeadBatch.query,
+                   LeadBatch.deadline,
+                   LeadBatch.published,
+                   LeadBatch.created_at,
+                   func.count(Lead.id).label("total"), 
+                   func.sum(case((Lead.completed == True, 1), else_=0)).label("completed_count")).outerjoin(Lead, Lead.batch_id == LeadBatch.id).where(LeadBatch.team_id == current_user.team_id).group_by(LeadBatch.id).order_by(LeadBatch.created_at.desc())
+    batches = db.execute(query).mappings().all()
 
     return {"success": True, "batches": batches}
 

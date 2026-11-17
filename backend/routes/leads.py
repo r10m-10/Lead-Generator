@@ -46,7 +46,7 @@ async def generate_leads(payload: LeadsRequest, current_user = Depends(get_curre
     for idx, batch in enumerate(payload.batches):
 
         start_time = time.perf_counter()
-        scraped = await scraper(browser, batch.query, batch.n_leads, place_ids)
+        scraped = await scraper(browser, batch.query, batch.n_leads, before.union(added))
         end_time = time.perf_counter()
 
         if scraped["error"]:
